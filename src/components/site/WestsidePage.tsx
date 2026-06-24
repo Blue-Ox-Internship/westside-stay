@@ -304,7 +304,7 @@ function RoomsSection({
         <SectionHeading
           eyebrow="Where you'll stay"
           title="Our Rooms"
-          kicker="Four distinct rooms, each thoughtfully styled for rest, work and play."
+          kicker="Two distinct rooms, each thoughtfully styled for rest, work and play."
         />
         <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
           {ROOMS.map((r) => (
