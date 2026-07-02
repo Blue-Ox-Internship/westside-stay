@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "The Westside Airbnb — Where comfort meets home" },
+      { title: "The Westside Airbnb — Where comfort meets home!" },
       {
         name: "description",
         content:
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "The Westside Airbnb" },
       {
         property: "og:description",
-        content: "Your perfect home away from home in the heart of the city.",
+        content: "Where comfort meets home!",
       },
       {
         property: "og:image",

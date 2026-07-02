@@ -21,7 +21,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Instagram,
-  Facebook,
   Sparkles,
   Home as HomeIcon,
   Heart,
@@ -35,7 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ROOMS, SAMPLE_REVIEWS, type Room, type Review } from "./data";
-import { createBooking, createReview, fetchReviews } from "@/lib/api";
+import { createBooking, createReview, fetchAvailability, fetchReviews } from "@/lib/api";
 
 /* ---------------- NAVBAR ---------------- */
 const NAV_LINKS = [
@@ -74,7 +73,8 @@ function Navbar() {
             <li key={l.href}>
               <a
                 href={l.href}
-                className="text-sm font-medium text-foreground/80 transition-colors hover:text-accent"
+                className={`text-sm font-medium transition-colors hover:text-accent ${scrolled ? "text-foreground/80" : "text-white drop-shadow-md"
+                  }`}
               >
                 {l.label}
               </a>
@@ -88,7 +88,7 @@ function Navbar() {
         </div>
         <button
           aria-label="Toggle menu"
-          className="rounded-md p-2 text-foreground lg:hidden"
+          className={`rounded-md p-2 lg:hidden ${scrolled ? "text-foreground" : "text-white"}`}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -134,7 +134,7 @@ function Hero() {
           <span className="text-[var(--gold)]">AIRBNB</span>
         </h1>
         <p className="mt-6 max-w-2xl text-base text-white/85 sm:text-lg md:text-xl">
-          Your perfect stay away from home in the heart of the city.
+          Where comfort meets home!
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <a href="#booking">
@@ -377,12 +377,12 @@ function WhatWeOfferSection() {
     {
       icon: MapPin,
       title: "Prime Location",
-      desc: "Steps from top restaurants, malls and transport. Get the city at your doorstep without sacrificing peace and quiet.",
+      desc: "A stone's throw from top restaurants and supermarkets. Get all your needs at your doorstep without sacrificing your peace and quiet.",
     },
     {
       icon: HomeIcon,
       title: "Entire Place to Yourself",
-      desc: "No shared spaces and no surprise guests. The whole home — rooms, kitchen, pool and garden — is exclusively yours.",
+      desc: "No shared rooms and no surprise guests. The whole room, kitchen — is exclusively yours.",
     },
     {
       icon: Heart,
@@ -419,9 +419,7 @@ function WhatWeOfferSection() {
 
 /* ---------------- LOCATION ---------------- */
 function LocationSection() {
-  // TODO: replace this generic embed with the actual property coordinates.
-  const mapEmbed =
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d127671.16!2d32.51!3d0.31!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbc0d6f5b8b5b%3A0x0!2sKampala!5e0!3m2!1sen!2sug!4v1700000000000";
+  const mapEmbed = "https://www.google.com/maps?q=Matari+Drive,+Ruharo+Rd,+Mbarara,+Uganda&output=embed";
   return (
     <section id="location" className="section-pad bg-secondary/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -437,13 +435,13 @@ function LocationSection() {
             />
           </div>
           <div className="flex flex-col justify-center">
-            <h3 className="font-display text-3xl font-semibold text-primary">123 Westside Avenue</h3>
-            <p className="mt-1 text-base text-muted-foreground">Kampala, Uganda</p>
+            <h3 className="font-display text-3xl font-semibold text-primary">Matari Drive, Ruharo Rd</h3>
+            <p className="mt-1 text-base text-muted-foreground">Mbarara, Uganda</p>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 ["10 min", "to City Centre"],
                 ["5 min", "to Supermarket"],
-                ["15 min", "to Airport"],
+                ["5 min", "to Restaurants"],
               ].map(([t, l]) => (
                 <div key={l} className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
                   <div className="font-display text-2xl font-bold text-accent">{t}</div>
@@ -452,7 +450,7 @@ function LocationSection() {
               ))}
             </div>
             <a
-              href="https://www.google.com/maps/dir/?api=1&destination=Kampala+Uganda"
+              href="https://www.google.com/maps/dir/?api=1&destination=Matari+Drive,+Ruharo+Rd,+Mbarara,+Uganda"
               target="_blank"
               rel="noreferrer"
               className="mt-8"
@@ -469,29 +467,13 @@ function LocationSection() {
 }
 
 /* ---------------- BOOKING ---------------- */
-function getBlockedDates(): Date[] {
-  // Next 3 weekends marked unavailable
-  const today = new Date();
-  const blocked: Date[] = [];
-  let count = 0;
-  let d = new Date(today);
-  while (count < 3) {
-    d.setDate(d.getDate() + 1);
-    if (d.getDay() === 6) {
-      const sat = new Date(d);
-      const sun = new Date(d);
-      sun.setDate(sun.getDate() + 1);
-      blocked.push(sat, sun);
-      count++;
-    }
-  }
-  return blocked;
+function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
+  return aStart < bEnd && aEnd > bStart;
 }
 
 function BookingSection({ initialRoom }: { initialRoom: string }) {
   const [form, setForm] = useState({
     name: "",
-    email: "",
     phone: "",
     roomId: initialRoom,
     checkIn: "",
@@ -501,8 +483,24 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   });
   useEffect(() => setForm((f) => ({ ...f, roomId: initialRoom })), [initialRoom]);
 
-  const blocked = useMemo(() => getBlockedDates(), []);
   const room = ROOMS.find((r) => r.id === form.roomId) ?? ROOMS[0];
+
+  const [bookedRanges, setBookedRanges] = useState<{ from: Date; to: Date }[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchAvailability(form.roomId)
+      .then((ranges) => {
+        if (!cancelled) {
+          setBookedRanges(ranges.map((r) => ({ from: new Date(r.checkIn), to: new Date(r.checkOut) })));
+        }
+      })
+      .catch(() => {
+        // Availability display is best-effort; server still enforces no double-booking.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.roomId]);
 
   const nights = useMemo(() => {
     if (!form.checkIn || !form.checkOut) return 0;
@@ -513,19 +511,20 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   }, [form.checkIn, form.checkOut]);
 
   const subtotal = nights * room.price;
-  const cleaning = nights > 0 ? 30 : 0;
-  const service = +(subtotal * 0.1).toFixed(2);
-  const total = subtotal + cleaning + service;
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Please enter your full name.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error("Please enter a valid email address.");
     if (!form.phone.trim()) return toast.error("Please enter a phone number.");
     if (!form.checkIn || !form.checkOut) return toast.error("Please pick check-in and check-out dates.");
     if (nights <= 0) return toast.error("Check-out must be after check-in.");
     if (form.guests < 1 || form.guests > 6) return toast.error("Guests must be between 1 and 6.");
+
+    const checkInDate = new Date(form.checkIn);
+    const checkOutDate = new Date(form.checkOut);
+    const hasConflict = bookedRanges.some((r) => rangesOverlap(checkInDate, checkOutDate, r.from, r.to));
+    if (hasConflict) return toast.error("Those dates are already booked for this room. Please choose different dates.");
 
     setSubmitting(true);
     try {
@@ -534,6 +533,8 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
         description: "We'll confirm within 24 hours.",
       });
       setForm((f) => ({ ...f, checkIn: "", checkOut: "", requests: "" }));
+      const ranges = await fetchAvailability(form.roomId).catch(() => null);
+      if (ranges) setBookedRanges(ranges.map((r) => ({ from: new Date(r.checkIn), to: new Date(r.checkOut) })));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to submit booking request.");
     } finally {
@@ -566,19 +567,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                   className="mt-1.5"
                 />
               </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="jane@example.com"
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
+              <div className="sm:col-span-2">
                 <Label htmlFor="phone">Phone</Label>
                 <Input
                   id="phone"
@@ -586,7 +575,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                   required
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+256 700 000 000"
+                  placeholder="+256 769 042 430"
                   className="mt-1.5"
                 />
               </div>
@@ -647,7 +636,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                   id="req"
                   value={form.requests}
                   onChange={(e) => setForm({ ...form, requests: e.target.value })}
-                  placeholder="Late check-in, dietary preferences, airport pickup..."
+                  placeholder="Late check-in or other special requests..."
                   className="mt-1.5 min-h-[100px]"
                 />
               </div>
@@ -672,25 +661,17 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                   </span>
                   <span>${subtotal}</span>
                 </div>
-                <div className="flex justify-between text-foreground/80">
-                  <span>Cleaning fee</span>
-                  <span>${cleaning}</span>
-                </div>
-                <div className="flex justify-between text-foreground/80">
-                  <span>Service fee (10%)</span>
-                  <span>${service}</span>
-                </div>
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                 <span className="font-semibold text-primary">Total</span>
-                <span className="font-display text-2xl font-bold text-accent">${total.toFixed(2)}</span>
+                <span className="font-display text-2xl font-bold text-accent">${subtotal.toFixed(2)}</span>
               </div>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h3 className="px-2 pb-2 font-display text-lg font-semibold text-primary">Availability</h3>
               <Calendar
                 mode="single"
-                disabled={[{ before: new Date() }, ...blocked]}
+                disabled={[{ before: new Date() }, ...bookedRanges]}
                 className="pointer-events-auto mx-auto"
               />
               <p className="mt-2 px-2 text-xs text-muted-foreground">
@@ -862,6 +843,14 @@ function ReviewsSection() {
   );
 }
 
+function TiktokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M16.6 5.82c-.9-.86-1.44-2.03-1.44-3.32h-3.11v13.9c0 1.61-1.31 2.92-2.92 2.92a2.92 2.92 0 1 1 0-5.84c.29 0 .57.04.84.12v-3.16a6.07 6.07 0 0 0-.84-.06 6.06 6.06 0 1 0 6.06 6.06V9.38a8.9 8.9 0 0 0 4.65 1.31V7.58a5.4 5.4 0 0 1-3.24-1.76z" />
+    </svg>
+  );
+}
+
 /* ---------------- FOOTER ---------------- */
 function Footer() {
   return (
@@ -870,7 +859,7 @@ function Footer() {
         <div className="md:col-span-1">
           <div className="font-display text-2xl font-bold">The Westside Airbnb</div>
           <p className="mt-3 text-sm text-primary-foreground/75">
-            Your perfect home away from home in the heart of the city.
+            Where comfort meets home!
           </p>
         </div>
         <div>
@@ -893,30 +882,30 @@ function Footer() {
         <div>
           <h4 className="font-display text-base font-semibold">Contact</h4>
           <ul className="mt-3 space-y-2 text-sm text-primary-foreground/80">
-            <li>hello@thewestside.example</li>
-            <li>+256 700 000 000</li>
-            <li>123 Westside Avenue, Kampala</li>
+            <li>thewestside2025@gmail.com</li>
+            <li>+256 769 042 430</li>
+            <li>Matari Drive, Ruharo Rd, Mbarara</li>
           </ul>
         </div>
         <div>
           <h4 className="font-display text-base font-semibold">Follow us</h4>
           <div className="mt-3 flex gap-3">
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/t.h.e.westside"
               aria-label="Instagram"
               className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
-              href="https://facebook.com"
-              aria-label="Facebook"
+              href="https://www.tiktok.com/@thewestside_apartments"
+              aria-label="TikTok"
               className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
             >
-              <Facebook className="h-4 w-4" />
+              <TiktokIcon className="h-4 w-4" />
             </a>
             <a
-              href="https://wa.me/256700000000"
+              href="https://wa.me/256769042430"
               aria-label="WhatsApp"
               className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
             >
@@ -945,7 +934,7 @@ function FloatingButtons() {
   return (
     <>
       <a
-        href="https://wa.me/256700000000"
+        href="https://wa.me/256769042430"
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"

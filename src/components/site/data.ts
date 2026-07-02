@@ -63,12 +63,12 @@ export type Review = {
 export const SAMPLE_REVIEWS: Review[] = [
   {
     id: "r1",
-    name: "Amelia Carter",
-    flag: "🇬🇧",
+    name: "A. Mary Vanessa",
+    flag: "🇷🇼",
     rating: 5,
-    date: "Stayed March 2025",
+    date: "Stayed April 2026",
     text:
-      "Honestly the best Airbnb we've ever booked. The pool was sparkling, the kitchen had everything we needed for our anniversary dinner, and our host replied within minutes whenever we messaged. Already planning our next trip back.",
+      "Honestly this was the best Airbnb i have ever booked. The environment was exactly as described; very clean, comfortable, beautifully designed and equipped with everything I needed. The location was convenient and the host was incredibly welcoming and responsive throughout my stay. Check-in and check-out were seamless making the entire experience stress-free. I am so planning to stay here again very soon and I highly recommend this place to anyone looking for a comfortable and peaceful stay.",
   },
   {
     id: "r2",

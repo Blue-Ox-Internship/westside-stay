@@ -4,7 +4,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 export type BookingPayload = {
   name: string;
-  email: string;
   phone: string;
   roomId: string;
   checkIn: string;
@@ -23,6 +22,15 @@ export async function createBooking(payload: BookingPayload): Promise<void> {
     const body = await res.json().catch(() => null);
     throw new Error(body?.error ?? "Failed to submit booking request.");
   }
+}
+
+export type BookedRange = { checkIn: string; checkOut: string };
+
+export async function fetchAvailability(roomId: string): Promise<BookedRange[]> {
+  const res = await fetch(`${API_BASE_URL}/api/bookings/availability?roomId=${encodeURIComponent(roomId)}`);
+  if (!res.ok) throw new Error("Failed to load availability.");
+  const rows: { check_in: string; check_out: string }[] = await res.json();
+  return rows.map((r) => ({ checkIn: r.check_in, checkOut: r.check_out }));
 }
 
 type ReviewRow = {

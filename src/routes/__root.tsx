@@ -77,11 +77,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "The Westside Airbnb — Your home away from home" },
+      { title: "The Westside Airbnb — Where comfort meets home!" },
       { name: "description", content: "Book The Westside Airbnb in Mbarara — luxury rooms, mini-garden and dedicated host support." },
       { name: "author", content: "The Westside Airbnb" },
       { property: "og:title", content: "The Westside Airbnb" },
-      { property: "og:description", content: "Your perfect home away from home in the heart of the city." },
+      { property: "og:description", content: "Where comfort meets home!" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

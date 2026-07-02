@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // The Lovable nitro plugin only auto-enables inside a Lovable sandbox; force it on for
+  // real deploys and target Vercel explicitly so `vercel deploy`/import gets a correct build.
+  nitro: { preset: "vercel" },
 });

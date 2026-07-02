@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  email TEXT NOT NULL,
   phone TEXT NOT NULL,
   room_id TEXT NOT NULL,
   check_in DATE NOT NULL,
