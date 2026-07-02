@@ -5,11 +5,11 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "The Westside Airbnb — Your home away from home" },
+      { title: "The Westside Airbnb — Where comfort meets home" },
       {
         name: "description",
         content:
-          "Book The Westside Airbnb in Kampala — luxury rooms, swimming pool, garden, and dedicated host support.",
+          "Book The Westside Airbnb in Mbarara — luxury rooms, mini-garden, and dedicated host support.",
       },
       { property: "og:title", content: "The Westside Airbnb" },
       {

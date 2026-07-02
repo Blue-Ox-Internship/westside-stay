@@ -34,8 +34,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { ROOMS, SAMPLE_REVIEWS, type Room, type Review } from "./data";
+import { createBooking, createReview, fetchReviews } from "@/lib/api";
 
 /* ---------------- NAVBAR ---------------- */
 const NAV_LINKS = [
@@ -58,16 +58,16 @@ function Navbar() {
   }, []);
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all ${
-        scrolled ? "bg-background/85 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"
-      }`}
+      className={`fixed inset-x-0 top-0 z-50 transition-all ${scrolled ? "bg-background/85 backdrop-blur-md border-b border-border shadow-sm" : "bg-transparent"
+        }`}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <a href="#top" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-primary">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
-            <HomeIcon className="h-4 w-4" />
-          </span>
-          <span className="hidden sm:inline">The Westside</span>
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
+        <a href="#top" className="flex items-center">
+          <img
+            src="/logo.png"
+            alt="The Westside Airbnb"
+            className="h-20 w-auto object-contain sm:h-24 brightness-0 invert"
+          />
         </a>
         <ul className="hidden items-center gap-7 lg:flex">
           {NAV_LINKS.map((l) => (
@@ -123,22 +123,18 @@ function Hero() {
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage:
-            "url(https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=80)",
+            "url(/main.jpeg)",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
       <div className="relative mx-auto flex min-h-[100svh] max-w-5xl flex-col items-center justify-center px-6 text-center text-white">
-        <Badge className="mb-6 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
-          <Star className="mr-1 h-3.5 w-3.5 fill-[var(--gold)] text-[var(--gold)]" />
-          4.9 · 120 Reviews · Superhost
-        </Badge>
         <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
           THE WESTSIDE
           <br />
           <span className="text-[var(--gold)]">AIRBNB</span>
         </h1>
         <p className="mt-6 max-w-2xl text-base text-white/85 sm:text-lg md:text-xl">
-          Your perfect home away from home in the heart of the city.
+          Your perfect stay away from home in the heart of the city.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <a href="#booking">
@@ -182,12 +178,23 @@ function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={room.images[0]}
-          alt={room.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {room.video ? (
+          <video
+            src={room.video}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <img
+            src={room.images[0]}
+            alt={room.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        )}
         <div className="absolute right-3 top-3 rounded-full bg-background/95 px-3 py-1 text-sm font-semibold text-primary shadow-md">
           ${room.price}
           <span className="text-xs font-normal text-muted-foreground"> / night</span>
@@ -199,7 +206,6 @@ function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground/70">
           <span>👥 Up to {room.maxGuests} guests</span>
           <span>🛏 {room.bed}</span>
-          <span>📐 {room.size} sq ft</span>
         </div>
         <Button
           onClick={() => onView(room)}
@@ -230,31 +236,42 @@ function RoomModal({
     <Dialog open={!!room} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto p-0">
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-          <img src={room.images[idx]} alt={room.name} className="h-full w-full object-cover" />
-          <button
-            onClick={() => setIdx((i) => (i - 1 + total) % total)}
-            className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => setIdx((i) => (i + 1) % total)}
-            className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
-            aria-label="Next image"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-            {room.images.map((_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === idx ? "w-6 bg-white" : "w-1.5 bg-white/60"
-                }`}
-              />
-            ))}
-          </div>
+          {room.video ? (
+            <video
+              src={room.video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <>
+              <img src={room.images[idx]} alt={room.name} className="h-full w-full object-cover" />
+              <button
+                onClick={() => setIdx((i) => (i - 1 + total) % total)}
+                className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setIdx((i) => (i + 1) % total)}
+                className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                {room.images.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-1.5 bg-white/60"}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
         <div className="p-6">
           <DialogHeader>
@@ -264,7 +281,6 @@ function RoomModal({
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-foreground/80">
             <span>👥 Up to {room.maxGuests} guests</span>
             <span>🛏 {room.bed}</span>
-            <span>📐 {room.size} sq ft</span>
             <span className="font-semibold text-accent">${room.price} / night</span>
           </div>
           <div className="mt-6">
@@ -319,17 +335,13 @@ function RoomsSection({
 /* ---------------- AMENITIES ---------------- */
 const AMENITIES = [
   { icon: Wifi, label: "Free WiFi" },
-  { icon: Waves, label: "Swimming Pool" },
   { icon: ChefHat, label: "Full Kitchen" },
   { icon: Car, label: "Free Parking" },
   { icon: Wind, label: "Air Conditioning" },
   { icon: Tv, label: "Smart TV" },
   { icon: WashingMachine, label: "Washing Machine" },
-  { icon: Trees, label: "Garden & Patio" },
-  { icon: Flame, label: "BBQ Grill" },
-  { icon: ShieldCheck, label: "Security Cameras" },
-  { icon: KeyRound, label: "24/7 Check-in" },
-  { icon: PawPrint, label: "Pet Friendly" },
+  { icon: Trees, label: "Mini-garden" },
+  { icon: KeyRound, label: "24/7 Self Check-in" },
 ];
 
 function AmenitiesSection() {
@@ -339,7 +351,7 @@ function AmenitiesSection() {
         <SectionHeading
           eyebrow="What's included"
           title="Amenities"
-          kicker="Everything you need for a relaxed, effortless stay."
+          kicker="Everything you will need for a modern, comfortable, relaxed, effortless and memorable stay"
         />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {AMENITIES.map(({ icon: Icon, label }) => (
@@ -504,8 +516,9 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   const cleaning = nights > 0 ? 30 : 0;
   const service = +(subtotal * 0.1).toFixed(2);
   const total = subtotal + cleaning + service;
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Please enter your full name.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error("Please enter a valid email address.");
@@ -513,10 +526,19 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
     if (!form.checkIn || !form.checkOut) return toast.error("Please pick check-in and check-out dates.");
     if (nights <= 0) return toast.error("Check-out must be after check-in.");
     if (form.guests < 1 || form.guests > 6) return toast.error("Guests must be between 1 and 6.");
-    toast.success("🎉 Booking request sent!", {
-      description: "We'll confirm within 24 hours.",
-    });
-    setForm((f) => ({ ...f, checkIn: "", checkOut: "", requests: "" }));
+
+    setSubmitting(true);
+    try {
+      await createBooking(form);
+      toast.success("🎉 Booking request sent!", {
+        description: "We'll confirm within 24 hours.",
+      });
+      setForm((f) => ({ ...f, checkIn: "", checkOut: "", requests: "" }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit booking request.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -633,9 +655,10 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
             <Button
               type="submit"
               size="lg"
+              disabled={submitting}
               className="mt-6 w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Request to Book
+              {submitting ? "Sending..." : "Request to Book"}
             </Button>
           </form>
 
@@ -728,27 +751,39 @@ function ReviewsSection() {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchReviews()
+      .then((fetched) => {
+        if (fetched.length > 0) setReviews(fetched);
+      })
+      .catch(() => {
+        // Keep the sample reviews shown if the backend is unreachable.
+      });
+  }, []);
 
   const average = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return toast.error("Please enter your name.");
     if (rating < 1) return toast.error("Please select a star rating.");
     if (text.trim().length < 8) return toast.error("Please write at least a few words.");
-    const newReview: Review = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      flag: "🌍",
-      rating,
-      date: `Stayed ${new Date().toLocaleString("default", { month: "long", year: "numeric" })}`,
-      text: text.trim(),
-    };
-    setReviews([newReview, ...reviews]);
-    setName("");
-    setRating(0);
-    setText("");
-    toast.success("Thanks for your review!");
+
+    setSubmitting(true);
+    try {
+      const newReview = await createReview({ name: name.trim(), rating, text: text.trim() });
+      setReviews((prev) => [newReview, ...prev]);
+      setName("");
+      setRating(0);
+      setText("");
+      toast.success("Thanks for your review!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit review.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -798,11 +833,10 @@ function ReviewsSection() {
                     className="rounded p-1"
                   >
                     <Star
-                      className={`h-7 w-7 transition-colors ${
-                        i <= (hover || rating)
-                          ? "fill-[var(--gold)] text-[var(--gold)]"
-                          : "text-muted-foreground/40"
-                      }`}
+                      className={`h-7 w-7 transition-colors ${i <= (hover || rating)
+                        ? "fill-[var(--gold)] text-[var(--gold)]"
+                        : "text-muted-foreground/40"
+                        }`}
                     />
                   </button>
                 ))}
@@ -818,8 +852,8 @@ function ReviewsSection() {
                 placeholder="Share what made your stay special..."
               />
             </div>
-            <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Submit Review
+            <Button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              {submitting ? "Submitting..." : "Submit Review"}
             </Button>
           </div>
         </form>

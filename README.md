@@ -1,6 +1,6 @@
 ﻿# 🏡 The Westside Stay
 
-> A premium Airbnb listing website for **The Westside Airbnb** — a luxury short-stay property in Kampala, Uganda.
+> A premium Airbnb listing website for **The Westside Airbnb** — a luxury short-stay property in Mbarara, Uganda.
 
 ---
 
@@ -16,9 +16,9 @@
 |---|---|
 | **Hero** | Full-screen banner with the property tagline and call-to-action buttons |
 | **Rooms** | Card gallery for the Studio Room ($85/night) and One Bedroom ($120/night) with a detail modal |
-| **Amenities** | Visual grid of 12 included amenities (WiFi, Pool, Kitchen, Parking, etc.) |
+| **Amenities** | Visual grid of 12 included amenities (WiFi, Kitchen, Parking, etc.) |
 | **Why Choose Us** | Three value-proposition cards: Prime Location, Entire Place, Dedicated Host |
-| **Location** | Embedded Google Map + proximity stats for Kampala, Uganda |
+| **Location** | Embedded Google Map + proximity stats for Mbarara, Uganda |
 | **Book Your Stay** | Multi-field booking form with live price summary (room rate + cleaning fee + 10% service fee) and an availability calendar |
 | **Reviews** | Guest review cards (with star ratings) + a form to submit a new review |
 | **Footer** | Social links (Instagram, Facebook), quick nav links, copyright |
@@ -27,13 +27,13 @@
 
 ## 🛏️ Room Listings
 
-### Studio Room — $85 / night
-- Up to **2 guests** · 1 Queen Bed · 320 sq ft
-- Amenities: Kitchenette, Ensuite bathroom, Smart TV, Air conditioning, Workspace
+### Studio Room — $27 / night
+- Up to **2 guests** · 1 Queen Bed · 
+- Amenities: Kitchenette, Ensuite bathroom, Smart TV, Air conditioning
 
-### One Bedroom — $120 / night
-- Up to **3 guests** · 1 King Bed · 480 sq ft
-- Amenities: Separate living room, Full kitchen, Ensuite bathroom, Smart TV, Air conditioning
+### One Bedroom — $41 / night
+- Up to **2 guests** · 1 King Bed · 
+- Amenities: Separate living room, kitchen, Ensuite bathroom, Smart TV, Air conditioning
 
 ---
 
