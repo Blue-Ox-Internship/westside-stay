@@ -33,6 +33,46 @@ export async function fetchAvailability(roomId: string): Promise<BookedRange[]> 
   return rows.map((r) => ({ checkIn: r.check_in, checkOut: r.check_out }));
 }
 
+export type Booking = {
+  id: string;
+  name: string;
+  phone: string;
+  room_id: string;
+  check_in: string;
+  check_out: string;
+  guests: number;
+  requests: string | null;
+  status: "pending" | "confirmed" | "cancelled";
+  created_at: string;
+};
+
+export async function fetchAllBookings(adminPassword: string): Promise<Booking[]> {
+  const res = await fetch(`${API_BASE_URL}/api/bookings`, {
+    headers: { "x-admin-password": adminPassword },
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) throw new Error("Failed to load bookings.");
+  return res.json();
+}
+
+export async function updateBookingStatus(
+  id: string,
+  status: Booking["status"],
+  adminPassword: string
+): Promise<Booking> {
+  const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
+    body: JSON.stringify({ status }),
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Failed to update booking.");
+  }
+  return res.json();
+}
+
 type ReviewRow = {
   id: string;
   name: string;

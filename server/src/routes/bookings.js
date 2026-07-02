@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { pool } from "../db.js";
+import { requireAdmin } from "../middleware/requireAdmin.js";
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.post("/", async (req, res) => {
 
   try {
     const overlap = await pool.query(
-      `SELECT 1 FROM bookings WHERE room_id = $1 AND check_in < $3 AND check_out > $2 LIMIT 1`,
+      `SELECT 1 FROM bookings WHERE room_id = $1 AND status = 'confirmed' AND check_in < $3 AND check_out > $2 LIMIT 1`,
       [roomId, checkIn, checkOut]
     );
     if (overlap.rowCount > 0) {
@@ -38,7 +39,7 @@ router.get("/availability", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "SELECT check_in, check_out FROM bookings WHERE room_id = $1 ORDER BY check_in",
+      "SELECT check_in, check_out FROM bookings WHERE room_id = $1 AND status = 'confirmed' ORDER BY check_in",
       [roomId]
     );
     res.json(result.rows);
@@ -48,13 +49,32 @@ router.get("/availability", async (req, res) => {
   }
 });
 
-router.get("/", async (_req, res) => {
+router.get("/", requireAdmin, async (_req, res) => {
   try {
     const result = await pool.query("SELECT * FROM bookings ORDER BY created_at DESC");
     res.json(result.rows);
   } catch (err) {
     console.error("Failed to fetch bookings:", err);
     res.status(500).json({ error: "Failed to fetch bookings." });
+  }
+});
+
+router.patch("/:id/status", requireAdmin, async (req, res) => {
+  const { status } = req.body;
+  if (!["pending", "confirmed", "cancelled"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status." });
+  }
+
+  try {
+    const result = await pool.query("UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *", [
+      status,
+      req.params.id,
+    ]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Booking not found." });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Failed to update booking status:", err);
+    res.status(500).json({ error: "Failed to update booking status." });
   }
 });
 

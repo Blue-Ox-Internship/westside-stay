@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   check_out DATE NOT NULL,
   guests INTEGER NOT NULL,
   requests TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
