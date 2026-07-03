@@ -20,6 +20,7 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Instagram,
   Sparkles,
   Home as HomeIcon,
@@ -33,6 +34,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ROOMS, SAMPLE_REVIEWS, type Room, type Review } from "./data";
 import {
   createBooking,
@@ -84,6 +92,120 @@ function useSiteData() {
   return useContext(SiteDataContext);
 }
 
+/* ---------------- CURRENCY ---------------- */
+const CURRENCIES = [
+  { code: "USD", label: "US Dollar" },
+  { code: "EUR", label: "Euro" },
+  { code: "GBP", label: "British Pound" },
+  { code: "UGX", label: "Ugandan Shilling" },
+] as const;
+type CurrencyCode = (typeof CURRENCIES)[number]["code"];
+
+// Last-resort rates used only if the live feed can't be reached; not kept in sync.
+const FALLBACK_RATES: Record<CurrencyCode, number> = { USD: 1, EUR: 0.92, GBP: 0.79, UGX: 3700 };
+const CURRENCY_STORAGE_KEY = "westside_currency";
+const RATES_CACHE_KEY = "westside_fx_rates_v1";
+const RATES_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+
+type CurrencyState = {
+  currency: CurrencyCode;
+  setCurrency: (c: CurrencyCode) => void;
+  formatPrice: (usdAmount: number) => string;
+};
+
+const CurrencyContext = createContext<CurrencyState>({
+  currency: "USD",
+  setCurrency: () => {},
+  formatPrice: (usd) => `$${usd.toFixed(2)}`,
+});
+function useCurrency() {
+  return useContext(CurrencyContext);
+}
+
+function CurrencyProvider({ children }: { children: React.ReactNode }) {
+  const [currency, setCurrencyState] = useState<CurrencyCode>("USD");
+  const [rates, setRates] = useState<Record<string, number>>(FALLBACK_RATES);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(CURRENCY_STORAGE_KEY);
+    if (saved && CURRENCIES.some((c) => c.code === saved)) {
+      setCurrencyState(saved as CurrencyCode);
+    }
+
+    try {
+      const cached = localStorage.getItem(RATES_CACHE_KEY);
+      if (cached) {
+        const { rates: cachedRates, fetchedAt } = JSON.parse(cached);
+        if (Date.now() - fetchedAt < RATES_CACHE_TTL_MS) {
+          setRates(cachedRates);
+          return;
+        }
+      }
+    } catch {
+      // Ignore malformed cache and fall through to a fresh fetch.
+    }
+
+    fetch("https://open.er-api.com/v6/latest/USD")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.result === "success" && data.rates) {
+          setRates(data.rates);
+          localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({ rates: data.rates, fetchedAt: Date.now() }));
+        }
+      })
+      .catch(() => {
+        // Keep the fallback rates if the live feed is unreachable.
+      });
+  }, []);
+
+  const setCurrency = (c: CurrencyCode) => {
+    setCurrencyState(c);
+    localStorage.setItem(CURRENCY_STORAGE_KEY, c);
+  };
+
+  const formatPrice = (usdAmount: number) => {
+    const rate = rates[currency] ?? FALLBACK_RATES[currency] ?? 1;
+    const converted = usdAmount * rate;
+    try {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(converted);
+    } catch {
+      return `${converted.toFixed(2)} ${currency}`;
+    }
+  };
+
+  return (
+    <CurrencyContext.Provider value={{ currency, setCurrency, formatPrice }}>{children}</CurrencyContext.Provider>
+  );
+}
+
+function CurrencySwitcher({ light }: { light?: boolean }) {
+  const { currency, setCurrency } = useCurrency();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Change currency"
+          className={`flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:text-accent ${light ? "text-white drop-shadow-md" : "text-foreground/80"
+            }`}
+        >
+          {currency}
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuRadioGroup value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
+          {CURRENCIES.map((c) => (
+            <DropdownMenuRadioItem key={c.code} value={c.code}>
+              {c.code} — {c.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /* ---------------- NAVBAR ---------------- */
 const NAV_LINKS = [
   { href: "#rooms", label: "Rooms" },
@@ -130,18 +252,22 @@ function Navbar() {
             </li>
           ))}
         </ul>
-        <div className="hidden lg:block">
+        <div className="hidden items-center gap-3 lg:flex">
+          <CurrencySwitcher light={!scrolled} />
           <a href="#booking">
             <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Book Now</Button>
           </a>
         </div>
-        <button
-          aria-label="Toggle menu"
-          className={`rounded-md p-2 lg:hidden ${scrolled ? "text-foreground" : "text-white"}`}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-1 lg:hidden">
+          <CurrencySwitcher light={!scrolled} />
+          <button
+            aria-label="Toggle menu"
+            className={`rounded-md p-2 ${scrolled ? "text-foreground" : "text-white"}`}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </nav>
       {open && (
         <div className="border-t border-border bg-background lg:hidden">
@@ -223,6 +349,7 @@ function SectionHeading({ eyebrow, title, kicker }: { eyebrow?: string; title: s
 
 /* ---------------- ROOMS ---------------- */
 function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
+  const { formatPrice } = useCurrency();
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -244,7 +371,7 @@ function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
           />
         )}
         <div className="absolute right-3 top-3 rounded-full bg-background/95 px-3 py-1 text-sm font-semibold text-primary shadow-md">
-          ${room.price}
+          {formatPrice(room.price)}
           <span className="text-xs font-normal text-muted-foreground"> / night</span>
         </div>
       </div>
@@ -277,6 +404,7 @@ function RoomModal({
   onBook: (id: string) => void;
 }) {
   const [idx, setIdx] = useState(0);
+  const { formatPrice } = useCurrency();
   useEffect(() => setIdx(0), [room?.id]);
   if (!room) return null;
   const media = [
@@ -336,7 +464,7 @@ function RoomModal({
           </DialogHeader>
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-foreground/80">
             <span>👥 Up to {room.maxGuests} guests</span>
-            <span className="font-semibold text-accent">${room.price} / night</span>
+            <span className="font-semibold text-accent">{formatPrice(room.price)} / night</span>
           </div>
           <div className="mt-6">
             <h4 className="mb-2 font-display text-lg font-semibold text-primary">Room amenities</h4>
@@ -625,6 +753,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   useEffect(() => setForm((f) => ({ ...f, roomId: initialRoom })), [initialRoom]);
 
   const { rooms, content } = useSiteData();
+  const { formatPrice } = useCurrency();
   const room = rooms.find((r) => r.id === form.roomId) ?? rooms[0];
   const [showPayment, setShowPayment] = useState(false);
 
@@ -734,7 +863,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                   <SelectContent>
                     {rooms.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
-                        {r.name} — ${r.price}/night
+                        {r.name} — {formatPrice(r.price)}/night
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -803,14 +932,14 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
               <div className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between text-foreground/80">
                   <span>
-                    ${room.price} × {nights || 0} {nights === 1 ? "night" : "nights"}
+                    {formatPrice(room.price)} × {nights || 0} {nights === 1 ? "night" : "nights"}
                   </span>
-                  <span>${subtotal}</span>
+                  <span>{formatPrice(subtotal)}</span>
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                 <span className="font-semibold text-primary">Total</span>
-                <span className="font-display text-2xl font-bold text-accent">${subtotal.toFixed(2)}</span>
+                <span className="font-display text-2xl font-bold text-accent">{formatPrice(subtotal)}</span>
               </div>
               {content.payment_methods.length > 0 && (
                 <Button
@@ -1156,32 +1285,34 @@ export default function WestsidePage() {
   }, []);
 
   return (
-    <SiteDataContext.Provider value={{ rooms, content }}>
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main>
-          <Hero />
-          <RoomsSection onViewRoom={setActiveRoom} />
-          <ExteriorSection />
-          <AmenitiesSection />
-          <WhatWeOfferSection />
-          <LocationSection />
-          <BookingSection initialRoom={selectedRoomId} />
-          <ReviewsSection />
-        </main>
-        <Footer />
-        <FloatingButtons />
-        <RoomModal
-          room={activeRoom}
-          onClose={() => setActiveRoom(null)}
-          onBook={(id) => {
-            setSelectedRoomId(id);
-            setTimeout(() => {
-              document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
-            }, 50);
-          }}
-        />
-      </div>
-    </SiteDataContext.Provider>
+    <CurrencyProvider>
+      <SiteDataContext.Provider value={{ rooms, content }}>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main>
+            <Hero />
+            <RoomsSection onViewRoom={setActiveRoom} />
+            <ExteriorSection />
+            <AmenitiesSection />
+            <WhatWeOfferSection />
+            <LocationSection />
+            <BookingSection initialRoom={selectedRoomId} />
+            <ReviewsSection />
+          </main>
+          <Footer />
+          <FloatingButtons />
+          <RoomModal
+            room={activeRoom}
+            onClose={() => setActiveRoom(null)}
+            onBook={(id) => {
+              setSelectedRoomId(id);
+              setTimeout(() => {
+                document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+              }, 50);
+            }}
+          />
+        </div>
+      </SiteDataContext.Provider>
+    </CurrencyProvider>
   );
 }
