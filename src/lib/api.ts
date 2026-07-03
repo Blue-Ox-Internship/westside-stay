@@ -151,6 +151,7 @@ export type SiteContent = {
   whatsapp_number: string;
   instagram_url: string;
   tiktok_url: string;
+  airbnb_url: string;
   address_line1: string;
   address_city: string;
   proximity_stats: { time: string; label: string }[];

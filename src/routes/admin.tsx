@@ -46,6 +46,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
   whatsapp_number: "",
   instagram_url: "",
   tiktok_url: "",
+  airbnb_url: "",
   address_line1: "",
   address_city: "",
   proximity_stats: [
@@ -613,6 +614,14 @@ function ContentTab({ password }: { password: string }) {
             <Input
               value={content.tiktok_url}
               onChange={(e) => update({ tiktok_url: e.target.value })}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label>Airbnb listing URL</Label>
+            <Input
+              value={content.airbnb_url}
+              onChange={(e) => update({ airbnb_url: e.target.value })}
               className="mt-1.5"
             />
           </div>

@@ -52,6 +52,7 @@ const DEFAULT_CONTENT: SiteContent = {
   whatsapp_number: "256769042430",
   instagram_url: "https://www.instagram.com/t.h.e.westside",
   tiktok_url: "https://www.tiktok.com/@thewestside_apartments",
+  airbnb_url: "",
   address_line1: "Matari Drive, Ruharo Rd",
   address_city: "Mbarara, Uganda",
   proximity_stats: [
@@ -1023,6 +1024,17 @@ function Footer() {
             >
               <MessageCircle className="h-4 w-4" />
             </a>
+            {content.airbnb_url && (
+              <a
+                href={content.airbnb_url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Airbnb listing"
+                className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
+              >
+                <HomeIcon className="h-4 w-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>
