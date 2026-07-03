@@ -6,8 +6,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 // files that many browsers (esp. Chrome on Windows) can't decode cleanly.
 // Ask Cloudinary to transcode to a browser-appropriate format at delivery
 // time instead of serving the raw upload.
-export function optimizedVideoUrl(url: string): string {
-  return url.replace("/video/upload/", "/video/upload/q_auto,f_auto/");
+// `width` caps delivered resolution to how big the video will actually be
+// shown (e.g. a grid thumbnail doesn't need a full 1080p file) — this cuts
+// load time/data usage without touching q_100's per-pixel quality.
+export function optimizedVideoUrl(url: string, width?: number): string {
+  const transform = width ? `q_100,f_auto,w_${width},c_limit` : "q_100,f_auto";
+  return url.replace("/video/upload/", `/video/upload/${transform}/`);
 }
 
 export type BookingPayload = {
