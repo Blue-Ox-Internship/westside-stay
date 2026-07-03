@@ -5,10 +5,13 @@ import { requireAdmin } from "../middleware/requireAdmin.js";
 const router = Router();
 
 router.post("/", async (req, res) => {
-  const { name, phone, roomId, checkIn, checkOut, guests, requests } = req.body;
+  const { name, phone, email, roomId, checkIn, checkOut, guests, requests } = req.body;
 
-  if (!name?.trim() || !phone?.trim() || !roomId || !checkIn || !checkOut || !guests) {
+  if (!name?.trim() || !phone?.trim() || !email?.trim() || !roomId || !checkIn || !checkOut || !guests) {
     return res.status(400).json({ error: "Missing required booking fields." });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: "Please enter a valid email address." });
   }
 
   try {
@@ -29,10 +32,10 @@ router.post("/", async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO bookings (name, phone, room_id, check_in, check_out, guests, requests)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO bookings (name, phone, email, room_id, check_in, check_out, guests, requests)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [name.trim(), phone.trim(), roomId, checkIn, checkOut, guests, requests ?? null]
+      [name.trim(), phone.trim(), email.trim(), roomId, checkIn, checkOut, guests, requests ?? null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

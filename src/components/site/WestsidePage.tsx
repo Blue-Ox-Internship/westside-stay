@@ -751,6 +751,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   const [form, setForm] = useState({
     name: "",
     phone: "",
+    email: "",
     roomId: initialRoom,
     checkIn: "",
     checkOut: "",
@@ -810,6 +811,9 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Please enter your full name.");
     if (!form.phone.trim()) return toast.error("Please enter a phone number.");
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      return toast.error("Please enter a valid email address.");
+    }
     if (!form.checkIn || !form.checkOut) return toast.error("Please pick check-in and check-out dates.");
     if (nights <= 0) return toast.error("Check-out must be after check-in.");
     if (form.guests < 1 || form.guests > 6) return toast.error("Guests must be between 1 and 6.");
@@ -879,6 +883,18 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="+256 769 042 430"
+                  className="mt-1.5"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="jane@example.com"
                   className="mt-1.5"
                 />
               </div>

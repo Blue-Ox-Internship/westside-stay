@@ -13,6 +13,7 @@ export function optimizedVideoUrl(url: string): string {
 export type BookingPayload = {
   name: string;
   phone: string;
+  email: string;
   roomId: string;
   checkIn: string;
   checkOut: string;
@@ -45,6 +46,7 @@ export type Booking = {
   id: string;
   name: string;
   phone: string;
+  email: string | null;
   room_id: string;
   check_in: string;
   check_out: string;

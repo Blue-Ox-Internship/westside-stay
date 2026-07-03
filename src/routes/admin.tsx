@@ -283,6 +283,7 @@ function BookingsTab({ password }: { password: string }) {
                 <TableCell>
                   <div className="font-medium">{b.name}</div>
                   <div className="text-xs text-muted-foreground">{b.phone}</div>
+                  {b.email && <div className="text-xs text-muted-foreground">{b.email}</div>}
                 </TableCell>
                 <TableCell>
                   {roomName(b.room_id)}
