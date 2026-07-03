@@ -812,8 +812,10 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
 
     const checkInDate = new Date(form.checkIn);
     const checkOutDate = new Date(form.checkOut);
-    const hasConflict = bookedRanges.some((r) => rangesOverlap(checkInDate, checkOutDate, r.from, r.to));
-    if (hasConflict) return toast.error("Those dates are already booked for this room. Please choose different dates.");
+    const overlappingCount = bookedRanges.filter((r) => rangesOverlap(checkInDate, checkOutDate, r.from, r.to)).length;
+    if (overlappingCount >= room.unitCount) {
+      return toast.error("All units of this room are already booked for those dates. Please choose different dates.");
+    }
 
     setSubmitting(true);
     try {
@@ -992,11 +994,16 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
               <h3 className="px-2 pb-2 font-display text-lg font-semibold text-primary">Availability</h3>
               <Calendar
                 mode="single"
-                disabled={[{ before: new Date() }, ...bookedRanges]}
+                disabled={[
+                  { before: new Date() },
+                  (day: Date) => bookedRanges.filter((r) => day >= r.from && day <= r.to).length >= room.unitCount,
+                ]}
                 className="pointer-events-auto mx-auto"
               />
               <p className="mt-2 px-2 text-xs text-muted-foreground">
-                Greyed out dates are unavailable.
+                {room.unitCount > 1
+                  ? `Greyed out dates mean all ${room.unitCount} ${room.name} units are booked.`
+                  : "Greyed out dates are unavailable."}
               </p>
             </div>
           </div>

@@ -10,6 +10,7 @@ export type Room = {
   images: string[];
   videos: string[];
   amenities: string[];
+  unitCount: number;
 };
 
 export const ROOMS: Room[] = [
@@ -30,6 +31,7 @@ export const ROOMS: Room[] = [
     ],
     videos: ["https://res.cloudinary.com/fvcek1lo/video/upload/v1782980081/westside-stay/rooms/studio-room.mov"],
     amenities: ["Queen bed", "Kitchenette", "Ensuite bathroom", "Smart TV", "Air conditioning", "Workspace"],
+    unitCount: 1,
   },
   {
     id: "one-bedroom",
@@ -48,6 +50,7 @@ export const ROOMS: Room[] = [
     ],
     videos: ["https://res.cloudinary.com/fvcek1lo/video/upload/v1782980113/westside-stay/rooms/one-bedroom.mov"],
     amenities: ["King bed", "Separate living room", "Full kitchen", "Ensuite bathroom", "Smart TV", "Air conditioning"],
+    unitCount: 1,
   },
 ];
 

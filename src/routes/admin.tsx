@@ -376,6 +376,20 @@ function RoomsTab({ password }: { password: string }) {
                 className="mt-1.5"
               />
             </div>
+            <div>
+              <Label>Number of units</Label>
+              <Input
+                type="number"
+                min={1}
+                value={room.unitCount}
+                onChange={(e) => updateField(room.id, { unitCount: Math.max(1, Number(e.target.value)) })}
+                className="mt-1.5"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                How many identical physical rooms of this type you have. A date is only shown as unavailable once
+                all units are booked.
+              </p>
+            </div>
             <div className="sm:col-span-2">
               <Label>Short description</Label>
               <Textarea

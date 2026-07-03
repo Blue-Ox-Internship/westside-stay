@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS rooms (
   images JSONB NOT NULL DEFAULT '[]',
   videos JSONB NOT NULL DEFAULT '[]',
   amenities JSONB NOT NULL DEFAULT '[]',
-  sort_order INTEGER NOT NULL DEFAULT 0
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  unit_count INTEGER NOT NULL DEFAULT 1
 );
 
 -- Key/value store for editable site copy (hero slogan, contact info, social

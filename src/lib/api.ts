@@ -94,6 +94,7 @@ type RoomRow = {
   videos: string[];
   amenities: string[];
   sort_order: number;
+  unit_count: number;
 };
 
 function toRoom(row: RoomRow): Room {
@@ -109,6 +110,7 @@ function toRoom(row: RoomRow): Room {
     images: row.images,
     videos: row.videos,
     amenities: row.amenities,
+    unitCount: row.unit_count,
   };
 }
 
@@ -134,6 +136,7 @@ export async function updateRoom(id: string, room: Room, adminPassword: string):
       images: room.images,
       videos: room.videos,
       amenities: room.amenities,
+      unitCount: room.unitCount,
     }),
   });
   if (res.status === 401) throw new Error("Incorrect password.");

@@ -12,12 +12,20 @@ router.post("/", async (req, res) => {
   }
 
   try {
+    const roomResult = await pool.query("SELECT unit_count FROM rooms WHERE id = $1", [roomId]);
+    if (roomResult.rowCount === 0) {
+      return res.status(400).json({ error: "Unknown room." });
+    }
+    const unitCount = roomResult.rows[0].unit_count;
+
     const overlap = await pool.query(
-      `SELECT 1 FROM bookings WHERE room_id = $1 AND status = 'confirmed' AND check_in < $3 AND check_out > $2 LIMIT 1`,
+      `SELECT COUNT(*) FROM bookings WHERE room_id = $1 AND status = 'confirmed' AND check_in < $3 AND check_out > $2`,
       [roomId, checkIn, checkOut]
     );
-    if (overlap.rowCount > 0) {
-      return res.status(409).json({ error: "Those dates are already booked for this room. Please choose different dates." });
+    if (Number(overlap.rows[0].count) >= unitCount) {
+      return res
+        .status(409)
+        .json({ error: "All units of this room are already booked for those dates. Please choose different dates." });
     }
 
     const result = await pool.query(
