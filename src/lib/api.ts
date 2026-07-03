@@ -51,6 +51,7 @@ export type Booking = {
   guests: number;
   requests: string | null;
   status: "pending" | "confirmed" | "cancelled";
+  unit_label: string | null;
   created_at: string;
 };
 
@@ -66,12 +67,13 @@ export async function fetchAllBookings(adminPassword: string): Promise<Booking[]
 export async function updateBookingStatus(
   id: string,
   status: Booking["status"],
-  adminPassword: string
+  adminPassword: string,
+  unitLabel?: string
 ): Promise<Booking> {
   const res = await fetch(`${API_BASE_URL}/api/bookings/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, unitLabel }),
   });
   if (res.status === 401) throw new Error("Incorrect password.");
   if (!res.ok) {
@@ -94,7 +96,7 @@ type RoomRow = {
   videos: string[];
   amenities: string[];
   sort_order: number;
-  unit_count: number;
+  units: string[];
 };
 
 function toRoom(row: RoomRow): Room {
@@ -110,7 +112,7 @@ function toRoom(row: RoomRow): Room {
     images: row.images,
     videos: row.videos,
     amenities: row.amenities,
-    unitCount: row.unit_count,
+    units: row.units,
   };
 }
 
@@ -136,7 +138,7 @@ export async function updateRoom(id: string, room: Room, adminPassword: string):
       images: room.images,
       videos: room.videos,
       amenities: room.amenities,
-      unitCount: room.unitCount,
+      units: room.units,
     }),
   });
   if (res.status === 401) throw new Error("Incorrect password.");

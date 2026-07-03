@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   guests INTEGER NOT NULL,
   requests TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'cancelled')),
+  unit_label TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -32,7 +33,8 @@ CREATE TABLE IF NOT EXISTS rooms (
   videos JSONB NOT NULL DEFAULT '[]',
   amenities JSONB NOT NULL DEFAULT '[]',
   sort_order INTEGER NOT NULL DEFAULT 0,
-  unit_count INTEGER NOT NULL DEFAULT 1
+  unit_count INTEGER NOT NULL DEFAULT 1,
+  units JSONB NOT NULL DEFAULT '[]'
 );
 
 -- Key/value store for editable site copy (hero slogan, contact info, social

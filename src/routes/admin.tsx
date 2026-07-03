@@ -176,22 +176,75 @@ function AdminPage() {
   );
 }
 
+function datesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return new Date(aStart) < new Date(bEnd) && new Date(aEnd) > new Date(bStart);
+}
+
+function whatsAppConfirmationLink(booking: Booking, roomLabel: string): string {
+  const phoneDigits = booking.phone.replace(/[^\d]/g, "");
+  const message =
+    `Hi ${booking.name}! Your booking for ${roomLabel} is confirmed 🎉\n\n` +
+    `📍 Room: ${booking.unit_label}\n` +
+    `📅 Check-in: ${booking.check_in.slice(0, 10)}\n` +
+    `📅 Check-out: ${booking.check_out.slice(0, 10)}\n\n` +
+    `Your room is ready for you. See you soon!`;
+  return `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
+}
+
 function BookingsTab({ password }: { password: string }) {
   const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [rooms, setRooms] = useState<Room[] | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchAllBookings(password)
       .then(setBookings)
       .catch((err) => toast.error(err instanceof Error ? err.message : "Failed to load bookings."));
+    fetchRooms()
+      .then(setRooms)
+      .catch(() => setRooms(ROOMS));
   }, [password]);
 
-  const handleStatusChange = async (id: string, status: Booking["status"]) => {
+  const availableUnitsFor = (booking: Booking): string[] => {
+    const room = rooms?.find((r) => r.id === booking.room_id);
+    if (!room) return [];
+    const taken = new Set(
+      (bookings ?? [])
+        .filter(
+          (other) =>
+            other.id !== booking.id &&
+            other.room_id === booking.room_id &&
+            other.status === "confirmed" &&
+            other.unit_label &&
+            datesOverlap(booking.check_in, booking.check_out, other.check_in, other.check_out)
+        )
+        .map((other) => other.unit_label as string)
+    );
+    return room.units.filter((u) => !taken.has(u));
+  };
+
+  const handleConfirm = async (booking: Booking) => {
+    const unitLabel = selectedUnit[booking.id] ?? availableUnitsFor(booking)[0];
+    if (!unitLabel) return toast.error("No room numbers available for those dates.");
+    setUpdatingId(booking.id);
+    try {
+      const updated = await updateBookingStatus(booking.id, "confirmed", password, unitLabel);
+      setBookings((prev) => (prev ? prev.map((b) => (b.id === booking.id ? updated : b)) : prev));
+      toast.success(`Booking confirmed — assigned ${unitLabel}.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update booking.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
     setUpdatingId(id);
     try {
-      const updated = await updateBookingStatus(id, status, password);
+      const updated = await updateBookingStatus(id, "cancelled", password);
       setBookings((prev) => (prev ? prev.map((b) => (b.id === id ? updated : b)) : prev));
-      toast.success(`Booking marked ${status}.`);
+      toast.success("Booking cancelled.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update booking.");
     } finally {
@@ -223,47 +276,84 @@ function BookingsTab({ password }: { password: string }) {
               </TableCell>
             </TableRow>
           )}
-          {bookings.map((b) => (
-            <TableRow key={b.id}>
-              <TableCell>
-                <div className="font-medium">{b.name}</div>
-                <div className="text-xs text-muted-foreground">{b.phone}</div>
-              </TableCell>
-              <TableCell>{roomName(b.room_id)}</TableCell>
-              <TableCell className="whitespace-nowrap">
-                {b.check_in.slice(0, 10)} → {b.check_out.slice(0, 10)}
-              </TableCell>
-              <TableCell>{b.guests}</TableCell>
-              <TableCell className="max-w-[220px] truncate text-muted-foreground">{b.requests || "—"}</TableCell>
-              <TableCell>
-                <Badge variant={statusVariant(b.status)} className="capitalize">
-                  {b.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                {b.status !== "confirmed" && (
-                  <Button
-                    size="sm"
-                    disabled={updatingId === b.id}
-                    onClick={() => handleStatusChange(b.id, "confirmed")}
-                    className="mr-2"
-                  >
-                    Confirm
-                  </Button>
-                )}
-                {b.status !== "cancelled" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={updatingId === b.id}
-                    onClick={() => handleStatusChange(b.id, "cancelled")}
-                  >
-                    Cancel
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {bookings.map((b) => {
+            const options = availableUnitsFor(b);
+            return (
+              <TableRow key={b.id}>
+                <TableCell>
+                  <div className="font-medium">{b.name}</div>
+                  <div className="text-xs text-muted-foreground">{b.phone}</div>
+                </TableCell>
+                <TableCell>
+                  {roomName(b.room_id)}
+                  {b.unit_label && <div className="text-xs text-muted-foreground">Room: {b.unit_label}</div>}
+                </TableCell>
+                <TableCell className="whitespace-nowrap">
+                  {b.check_in.slice(0, 10)} → {b.check_out.slice(0, 10)}
+                </TableCell>
+                <TableCell>{b.guests}</TableCell>
+                <TableCell className="max-w-[220px] truncate text-muted-foreground">{b.requests || "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={statusVariant(b.status)} className="capitalize">
+                    {b.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {b.status !== "confirmed" && (
+                    <div className="mb-2 flex items-center justify-end gap-2">
+                      {options.length > 0 ? (
+                        <select
+                          value={selectedUnit[b.id] ?? options[0]}
+                          onChange={(e) => setSelectedUnit((s) => ({ ...s, [b.id]: e.target.value }))}
+                          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+                        >
+                          {options.map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-destructive">No rooms free for these dates</span>
+                      )}
+                    </div>
+                  )}
+                  {b.status === "confirmed" && (
+                    <a
+                      href={whatsAppConfirmationLink(b, roomName(b.room_id))}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mb-2 inline-block"
+                    >
+                      <Button size="sm" variant="outline" className="mr-2">
+                        Message Guest
+                      </Button>
+                    </a>
+                  )}
+                  {b.status !== "confirmed" && (
+                    <Button
+                      size="sm"
+                      disabled={updatingId === b.id || options.length === 0}
+                      onClick={() => handleConfirm(b)}
+                      className="mr-2"
+                    >
+                      Confirm
+                    </Button>
+                  )}
+                  {b.status !== "cancelled" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={updatingId === b.id}
+                      onClick={() => handleCancel(b.id)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
@@ -274,6 +364,7 @@ function RoomsTab({ password }: { password: string }) {
   const [rooms, setRooms] = useState<Room[] | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [newUnitDrafts, setNewUnitDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchRooms()
@@ -283,6 +374,13 @@ function RoomsTab({ password }: { password: string }) {
 
   const updateField = (id: string, patch: Partial<Room>) => {
     setRooms((prev) => (prev ? prev.map((r) => (r.id === id ? { ...r, ...patch } : r)) : prev));
+  };
+
+  const addUnit = (room: Room) => {
+    const draft = (newUnitDrafts[room.id] ?? "").trim();
+    if (!draft) return;
+    updateField(room.id, { units: [...room.units, draft] });
+    setNewUnitDrafts((d) => ({ ...d, [room.id]: "" }));
   };
 
   const handleSave = async (room: Room) => {
@@ -376,19 +474,46 @@ function RoomsTab({ password }: { password: string }) {
                 className="mt-1.5"
               />
             </div>
-            <div>
-              <Label>Number of units</Label>
-              <Input
-                type="number"
-                min={1}
-                value={room.unitCount}
-                onChange={(e) => updateField(room.id, { unitCount: Math.max(1, Number(e.target.value)) })}
-                className="mt-1.5"
-              />
+            <div className="sm:col-span-2">
+              <Label>Room numbers</Label>
               <p className="mt-1 text-xs text-muted-foreground">
-                How many identical physical rooms of this type you have. A date is only shown as unavailable once
-                all units are booked.
+                One entry per physical room (e.g. "Studio 12"). A date is only shown as unavailable once every
+                room number below is booked. When you confirm a booking you'll assign one of these.
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {room.units.map((unit, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/50 py-1 pl-3 pr-1.5 text-sm"
+                  >
+                    {unit}
+                    <button
+                      type="button"
+                      onClick={() => updateField(room.id, { units: room.units.filter((_, idx) => idx !== i) })}
+                      aria-label={`Remove ${unit}`}
+                      className="grid h-4 w-4 place-items-center rounded-full text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <Input
+                  placeholder='e.g. "Studio 4"'
+                  value={newUnitDrafts[room.id] ?? ""}
+                  onChange={(e) => setNewUnitDrafts((d) => ({ ...d, [room.id]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addUnit(room);
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={() => addUnit(room)}>
+                  Add
+                </Button>
+              </div>
             </div>
             <div className="sm:col-span-2">
               <Label>Short description</Label>

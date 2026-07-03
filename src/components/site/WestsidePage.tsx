@@ -813,7 +813,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
     const checkInDate = new Date(form.checkIn);
     const checkOutDate = new Date(form.checkOut);
     const overlappingCount = bookedRanges.filter((r) => rangesOverlap(checkInDate, checkOutDate, r.from, r.to)).length;
-    if (overlappingCount >= room.unitCount) {
+    if (overlappingCount >= room.units.length) {
       return toast.error("All units of this room are already booked for those dates. Please choose different dates.");
     }
 
@@ -996,13 +996,13 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                 mode="single"
                 disabled={[
                   { before: new Date() },
-                  (day: Date) => bookedRanges.filter((r) => day >= r.from && day <= r.to).length >= room.unitCount,
+                  (day: Date) => bookedRanges.filter((r) => day >= r.from && day <= r.to).length >= room.units.length,
                 ]}
                 className="pointer-events-auto mx-auto"
               />
               <p className="mt-2 px-2 text-xs text-muted-foreground">
-                {room.unitCount > 1
-                  ? `Greyed out dates mean all ${room.unitCount} ${room.name} units are booked.`
+                {room.units.length > 1
+                  ? `Greyed out dates mean all ${room.units.length} ${room.name} units are booked.`
                   : "Greyed out dates are unavailable."}
               </p>
             </div>

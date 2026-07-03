@@ -68,17 +68,49 @@ router.get("/", requireAdmin, async (_req, res) => {
 });
 
 router.patch("/:id/status", requireAdmin, async (req, res) => {
-  const { status } = req.body;
+  const { status, unitLabel } = req.body;
   if (!["pending", "confirmed", "cancelled"].includes(status)) {
     return res.status(400).json({ error: "Invalid status." });
   }
 
   try {
-    const result = await pool.query("UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *", [
-      status,
-      req.params.id,
-    ]);
-    if (result.rowCount === 0) return res.status(404).json({ error: "Booking not found." });
+    if (status !== "confirmed") {
+      const result = await pool.query(
+        "UPDATE bookings SET status = $1, unit_label = NULL WHERE id = $2 RETURNING *",
+        [status, req.params.id]
+      );
+      if (result.rowCount === 0) return res.status(404).json({ error: "Booking not found." });
+      return res.json(result.rows[0]);
+    }
+
+    const bookingResult = await pool.query("SELECT * FROM bookings WHERE id = $1", [req.params.id]);
+    if (bookingResult.rowCount === 0) return res.status(404).json({ error: "Booking not found." });
+    const booking = bookingResult.rows[0];
+
+    if (!unitLabel) {
+      return res.status(400).json({ error: "A room number must be assigned to confirm this booking." });
+    }
+
+    const roomResult = await pool.query("SELECT units FROM rooms WHERE id = $1", [booking.room_id]);
+    if (roomResult.rowCount === 0 || !roomResult.rows[0].units.includes(unitLabel)) {
+      return res.status(400).json({ error: "That room number does not belong to this room type." });
+    }
+
+    const conflict = await pool.query(
+      `SELECT 1 FROM bookings
+       WHERE room_id = $1 AND status = 'confirmed' AND unit_label = $2 AND id != $3
+         AND check_in < $5 AND check_out > $4
+       LIMIT 1`,
+      [booking.room_id, unitLabel, booking.id, booking.check_in, booking.check_out]
+    );
+    if (conflict.rowCount > 0) {
+      return res.status(409).json({ error: `${unitLabel} is already booked for those dates.` });
+    }
+
+    const result = await pool.query(
+      "UPDATE bookings SET status = 'confirmed', unit_label = $1 WHERE id = $2 RETURNING *",
+      [unitLabel, req.params.id]
+    );
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Failed to update booking status:", err);

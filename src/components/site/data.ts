@@ -10,7 +10,7 @@ export type Room = {
   images: string[];
   videos: string[];
   amenities: string[];
-  unitCount: number;
+  units: string[];
 };
 
 export const ROOMS: Room[] = [
@@ -31,7 +31,7 @@ export const ROOMS: Room[] = [
     ],
     videos: ["https://res.cloudinary.com/fvcek1lo/video/upload/v1782980081/westside-stay/rooms/studio-room.mov"],
     amenities: ["Queen bed", "Kitchenette", "Ensuite bathroom", "Smart TV", "Air conditioning", "Workspace"],
-    unitCount: 1,
+    units: ["Studio Room 1", "Studio Room 2", "Studio Room 3"],
   },
   {
     id: "one-bedroom",
@@ -50,7 +50,7 @@ export const ROOMS: Room[] = [
     ],
     videos: ["https://res.cloudinary.com/fvcek1lo/video/upload/v1782980113/westside-stay/rooms/one-bedroom.mov"],
     amenities: ["King bed", "Separate living room", "Full kitchen", "Ensuite bathroom", "Smart TV", "Air conditioning"],
-    unitCount: 1,
+    units: Array.from({ length: 8 }, (_, i) => `One Bedroom ${i + 1}`),
   },
 ];
 

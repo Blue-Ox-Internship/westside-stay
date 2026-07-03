@@ -28,17 +28,19 @@ router.post("/", requireAdmin, async (req, res) => {
     videos,
     amenities,
     sortOrder,
-    unitCount,
+    units,
   } = req.body;
 
   if (!id?.trim() || !name?.trim() || price == null) {
     return res.status(400).json({ error: "id, name, and price are required." });
   }
 
+  const unitList = Array.isArray(units) && units.length > 0 ? units : ["1"];
+
   try {
     const result = await pool.query(
-      `INSERT INTO rooms (id, name, description, long_description, max_guests, bed, size, price, images, videos, amenities, sort_order, unit_count)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `INSERT INTO rooms (id, name, description, long_description, max_guests, bed, size, price, images, videos, amenities, sort_order, unit_count, units)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         id.trim(),
@@ -53,7 +55,8 @@ router.post("/", requireAdmin, async (req, res) => {
         JSON.stringify(videos ?? []),
         JSON.stringify(amenities ?? []),
         sortOrder ?? 0,
-        unitCount ?? 1,
+        unitList.length,
+        JSON.stringify(unitList),
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -76,15 +79,17 @@ router.put("/:id", requireAdmin, async (req, res) => {
     videos,
     amenities,
     sortOrder,
-    unitCount,
+    units,
   } = req.body;
+
+  const unitList = Array.isArray(units) && units.length > 0 ? units : ["1"];
 
   try {
     const result = await pool.query(
       `UPDATE rooms SET
         name = $1, description = $2, long_description = $3, max_guests = $4, bed = $5,
-        size = $6, price = $7, images = $8, videos = $9, amenities = $10, sort_order = $11, unit_count = $12
-       WHERE id = $13
+        size = $6, price = $7, images = $8, videos = $9, amenities = $10, sort_order = $11, unit_count = $12, units = $13
+       WHERE id = $14
        RETURNING *`,
       [
         name,
@@ -98,7 +103,8 @@ router.put("/:id", requireAdmin, async (req, res) => {
         JSON.stringify(videos ?? []),
         JSON.stringify(amenities ?? []),
         sortOrder ?? 0,
-        unitCount ?? 1,
+        unitList.length,
+        JSON.stringify(unitList),
         req.params.id,
       ]
     );
