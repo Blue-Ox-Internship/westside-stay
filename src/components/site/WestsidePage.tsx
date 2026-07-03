@@ -102,7 +102,8 @@ const CURRENCIES = [
 ] as const;
 type CurrencyCode = (typeof CURRENCIES)[number]["code"];
 
-// Last-resort rates used only if the live feed can't be reached; not kept in sync.
+// Rates are USD-based (as returned by the FX feed below). Last-resort values
+// used only if the live feed can't be reached; not kept in sync.
 const FALLBACK_RATES: Record<CurrencyCode, number> = { USD: 1, EUR: 0.92, GBP: 0.79, UGX: 3700 };
 const CURRENCY_STORAGE_KEY = "westside_currency";
 const RATES_CACHE_KEY = "westside_fx_rates_v1";
@@ -111,13 +112,16 @@ const RATES_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 type CurrencyState = {
   currency: CurrencyCode;
   setCurrency: (c: CurrencyCode) => void;
-  formatPrice: (usdAmount: number) => string;
+  // Room prices are stored in UGX (the actual, fixed price). This converts
+  // to whichever currency is selected -- UGX always renders the exact stored
+  // amount, other currencies are computed live and will drift with rates.
+  formatPrice: (ugxAmount: number) => string;
 };
 
 const CurrencyContext = createContext<CurrencyState>({
   currency: "UGX",
   setCurrency: () => {},
-  formatPrice: (usd) => `$${usd.toFixed(2)}`,
+  formatPrice: (ugx) => `UGX ${Math.round(ugx).toLocaleString()}`,
 });
 function useCurrency() {
   return useContext(CurrencyContext);
@@ -164,9 +168,10 @@ function CurrencyProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CURRENCY_STORAGE_KEY, c);
   };
 
-  const formatPrice = (usdAmount: number) => {
-    const rate = rates[currency] ?? FALLBACK_RATES[currency] ?? 1;
-    const converted = usdAmount * rate;
+  const formatPrice = (ugxAmount: number) => {
+    const ugxRate = rates.UGX ?? FALLBACK_RATES.UGX;
+    const targetRate = rates[currency] ?? FALLBACK_RATES[currency] ?? 1;
+    const converted = currency === "UGX" ? ugxAmount : (ugxAmount / ugxRate) * targetRate;
     try {
       return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(converted);
     } catch {

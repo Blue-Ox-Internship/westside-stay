@@ -440,10 +440,10 @@ function RoomsTab({ password }: { password: string }) {
               />
             </div>
             <div>
-              <Label>Price / night ($)</Label>
+              <Label>Price / night (UGX)</Label>
               <Input
                 type="number"
-                step="0.01"
+                step="1000"
                 value={room.price}
                 onChange={(e) => updateField(room.id, { price: Number(e.target.value) })}
                 className="mt-1.5"

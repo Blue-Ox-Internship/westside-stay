@@ -10,7 +10,7 @@ const rooms = [
     max_guests: 2,
     bed: "1 Queen Bed",
     size: 320,
-    price: 27.8,
+    price: 100000,
     images: [
       "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80",
       "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1600&q=80",
@@ -30,7 +30,7 @@ const rooms = [
     max_guests: 2,
     bed: "1 King Bed",
     size: 480,
-    price: 40.9,
+    price: 150000,
     images: [
       "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1600&q=80",
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80",
