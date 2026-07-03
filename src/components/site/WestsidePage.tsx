@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   Wifi,
   Waves,
@@ -34,7 +34,51 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ROOMS, SAMPLE_REVIEWS, type Room, type Review } from "./data";
-import { createBooking, createReview, fetchAvailability, fetchReviews } from "@/lib/api";
+import {
+  createBooking,
+  createReview,
+  fetchAvailability,
+  fetchContent,
+  fetchReviews,
+  fetchRooms,
+  type SiteContent,
+} from "@/lib/api";
+
+const DEFAULT_CONTENT: SiteContent = {
+  hero_slogan: "Where comfort meets home!",
+  contact_email: "thewestside2025@gmail.com",
+  contact_phone: "+256 769 042 430",
+  whatsapp_number: "256769042430",
+  instagram_url: "https://www.instagram.com/t.h.e.westside",
+  tiktok_url: "https://www.tiktok.com/@thewestside_apartments",
+  address_line1: "Matari Drive, Ruharo Rd",
+  address_city: "Mbarara, Uganda",
+  proximity_stats: [
+    { time: "10 min", label: "to City Centre" },
+    { time: "5 min", label: "to Supermarket" },
+    { time: "5 min", label: "to Restaurants" },
+  ],
+  why_choose_us: [
+    {
+      title: "Prime Location",
+      desc: "A stone's throw from top restaurants and supermarkets. Get all your needs at your doorstep without sacrificing your peace and quiet.",
+    },
+    {
+      title: "Entire Place to Yourself",
+      desc: "No shared rooms and no surprise guests. The whole room, kitchen — is exclusively yours.",
+    },
+    {
+      title: "Dedicated Host Support",
+      desc: "We're always a message away. From local recommendations to last-minute requests, your host has you covered, 24/7.",
+    },
+  ],
+};
+
+type SiteData = { rooms: Room[]; content: SiteContent };
+const SiteDataContext = createContext<SiteData>({ rooms: ROOMS, content: DEFAULT_CONTENT });
+function useSiteData() {
+  return useContext(SiteDataContext);
+}
 
 /* ---------------- NAVBAR ---------------- */
 const NAV_LINKS = [
@@ -117,6 +161,7 @@ function Navbar() {
 
 /* ---------------- HERO ---------------- */
 function Hero() {
+  const { content } = useSiteData();
   return (
     <section id="top" className="relative min-h-[100svh] w-full overflow-hidden">
       <div
@@ -133,9 +178,7 @@ function Hero() {
           <br />
           <span className="text-[var(--gold)]">AIRBNB</span>
         </h1>
-        <p className="mt-6 max-w-2xl text-base text-white/85 sm:text-lg md:text-xl">
-          Where comfort meets home!
-        </p>
+        <p className="mt-6 max-w-2xl text-base text-white/85 sm:text-lg md:text-xl">{content.hero_slogan}</p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <a href="#booking">
             <Button
@@ -314,6 +357,7 @@ function RoomsSection({
 }: {
   onViewRoom: (r: Room) => void;
 }) {
+  const { rooms } = useSiteData();
   return (
     <section id="rooms" className="section-pad bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -323,7 +367,7 @@ function RoomsSection({
           kicker="Two distinct rooms, each thoughtfully styled for rest, work and play."
         />
         <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
-          {ROOMS.map((r) => (
+          {rooms.map((r) => (
             <RoomCard key={r.id} room={r} onView={onViewRoom} />
           ))}
         </div>
@@ -372,24 +416,14 @@ function AmenitiesSection() {
 }
 
 /* ---------------- WHAT WE OFFER ---------------- */
+const WHY_CHOOSE_US_ICONS = [MapPin, HomeIcon, Heart];
+
 function WhatWeOfferSection() {
-  const cards = [
-    {
-      icon: MapPin,
-      title: "Prime Location",
-      desc: "A stone's throw from top restaurants and supermarkets. Get all your needs at your doorstep without sacrificing your peace and quiet.",
-    },
-    {
-      icon: HomeIcon,
-      title: "Entire Place to Yourself",
-      desc: "No shared rooms and no surprise guests. The whole room, kitchen — is exclusively yours.",
-    },
-    {
-      icon: Heart,
-      title: "Dedicated Host Support",
-      desc: "We're always a message away. From local recommendations to last-minute requests, your host has you covered, 24/7.",
-    },
-  ];
+  const { content } = useSiteData();
+  const cards = content.why_choose_us.map((c, i) => ({
+    ...c,
+    icon: WHY_CHOOSE_US_ICONS[i] ?? MapPin,
+  }));
   return (
     <section id="offer" className="section-pad bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -419,7 +453,9 @@ function WhatWeOfferSection() {
 
 /* ---------------- LOCATION ---------------- */
 function LocationSection() {
-  const mapEmbed = "https://www.google.com/maps?q=Matari+Drive,+Ruharo+Rd,+Mbarara,+Uganda&output=embed";
+  const { content } = useSiteData();
+  const fullAddress = `${content.address_line1}, ${content.address_city}`;
+  const mapEmbed = `https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}&output=embed`;
   return (
     <section id="location" className="section-pad bg-secondary/40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -435,22 +471,18 @@ function LocationSection() {
             />
           </div>
           <div className="flex flex-col justify-center">
-            <h3 className="font-display text-3xl font-semibold text-primary">Matari Drive, Ruharo Rd</h3>
-            <p className="mt-1 text-base text-muted-foreground">Mbarara, Uganda</p>
+            <h3 className="font-display text-3xl font-semibold text-primary">{content.address_line1}</h3>
+            <p className="mt-1 text-base text-muted-foreground">{content.address_city}</p>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[
-                ["10 min", "to City Centre"],
-                ["5 min", "to Supermarket"],
-                ["5 min", "to Restaurants"],
-              ].map(([t, l]) => (
-                <div key={l} className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
-                  <div className="font-display text-2xl font-bold text-accent">{t}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">{l}</div>
+              {content.proximity_stats.map(({ time, label }) => (
+                <div key={label} className="rounded-xl border border-border bg-card p-4 text-center shadow-sm">
+                  <div className="font-display text-2xl font-bold text-accent">{time}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{label}</div>
                 </div>
               ))}
             </div>
             <a
-              href="https://www.google.com/maps/dir/?api=1&destination=Matari+Drive,+Ruharo+Rd,+Mbarara,+Uganda"
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress)}`}
               target="_blank"
               rel="noreferrer"
               className="mt-8"
@@ -483,7 +515,8 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   });
   useEffect(() => setForm((f) => ({ ...f, roomId: initialRoom })), [initialRoom]);
 
-  const room = ROOMS.find((r) => r.id === form.roomId) ?? ROOMS[0];
+  const { rooms } = useSiteData();
+  const room = rooms.find((r) => r.id === form.roomId) ?? rooms[0];
 
   const [bookedRanges, setBookedRanges] = useState<{ from: Date; to: Date }[]>([]);
   useEffect(() => {
@@ -586,7 +619,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                     <SelectValue placeholder="Choose a room" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROOMS.map((r) => (
+                    {rooms.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.name} — ${r.price}/night
                       </SelectItem>
@@ -853,14 +886,13 @@ function TiktokIcon({ className }: { className?: string }) {
 
 /* ---------------- FOOTER ---------------- */
 function Footer() {
+  const { content } = useSiteData();
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4 lg:px-8">
         <div className="md:col-span-1">
           <div className="font-display text-2xl font-bold">The Westside Airbnb</div>
-          <p className="mt-3 text-sm text-primary-foreground/75">
-            Where comfort meets home!
-          </p>
+          <p className="mt-3 text-sm text-primary-foreground/75">{content.hero_slogan}</p>
         </div>
         <div>
           <h4 className="font-display text-base font-semibold">Quick links</h4>
@@ -882,30 +914,32 @@ function Footer() {
         <div>
           <h4 className="font-display text-base font-semibold">Contact</h4>
           <ul className="mt-3 space-y-2 text-sm text-primary-foreground/80">
-            <li>thewestside2025@gmail.com</li>
-            <li>+256 769 042 430</li>
-            <li>Matari Drive, Ruharo Rd, Mbarara</li>
+            <li>{content.contact_email}</li>
+            <li>{content.contact_phone}</li>
+            <li>
+              {content.address_line1}, {content.address_city}
+            </li>
           </ul>
         </div>
         <div>
           <h4 className="font-display text-base font-semibold">Follow us</h4>
           <div className="mt-3 flex gap-3">
             <a
-              href="https://www.instagram.com/t.h.e.westside"
+              href={content.instagram_url}
               aria-label="Instagram"
               className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
-              href="https://www.tiktok.com/@thewestside_apartments"
+              href={content.tiktok_url}
               aria-label="TikTok"
               className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
             >
               <TiktokIcon className="h-4 w-4" />
             </a>
             <a
-              href="https://wa.me/256769042430"
+              href={`https://wa.me/${content.whatsapp_number}`}
               aria-label="WhatsApp"
               className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-accent hover:text-accent-foreground"
             >
@@ -925,6 +959,7 @@ function Footer() {
 
 /* ---------------- FLOATING BUTTONS ---------------- */
 function FloatingButtons() {
+  const { content } = useSiteData();
   const [show, setShow] = useState(false);
   useEffect(() => {
     const onScroll = () => setShow(window.scrollY > 600);
@@ -934,7 +969,7 @@ function FloatingButtons() {
   return (
     <>
       <a
-        href="https://wa.me/256769042430"
+        href={`https://wa.me/${content.whatsapp_number}`}
         target="_blank"
         rel="noreferrer"
         aria-label="Chat on WhatsApp"
@@ -959,30 +994,50 @@ function FloatingButtons() {
 export default function WestsidePage() {
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string>(ROOMS[0].id);
+  const [rooms, setRooms] = useState<Room[]>(ROOMS);
+  const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT);
+
+  useEffect(() => {
+    fetchRooms()
+      .then((fetched) => {
+        if (fetched.length > 0) setRooms(fetched);
+      })
+      .catch(() => {
+        // Keep the static defaults shown if the backend is unreachable.
+      });
+    fetchContent()
+      .then((fetched) => setContent((prev) => ({ ...prev, ...fetched })))
+      .catch(() => {
+        // Keep the static defaults shown if the backend is unreachable.
+      });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main>
-        <Hero />
-        <RoomsSection onViewRoom={setActiveRoom} />
-        <AmenitiesSection />
-        <WhatWeOfferSection />
-        <LocationSection />
-        <BookingSection initialRoom={selectedRoomId} />
-        <ReviewsSection />
-      </main>
-      <Footer />
-      <FloatingButtons />
-      <RoomModal
-        room={activeRoom}
-        onClose={() => setActiveRoom(null)}
-        onBook={(id) => {
-          setSelectedRoomId(id);
-          setTimeout(() => {
-            document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
-          }, 50);
-        }}
-      />
-    </div>
+    <SiteDataContext.Provider value={{ rooms, content }}>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main>
+          <Hero />
+          <RoomsSection onViewRoom={setActiveRoom} />
+          <AmenitiesSection />
+          <WhatWeOfferSection />
+          <LocationSection />
+          <BookingSection initialRoom={selectedRoomId} />
+          <ReviewsSection />
+        </main>
+        <Footer />
+        <FloatingButtons />
+        <RoomModal
+          room={activeRoom}
+          onClose={() => setActiveRoom(null)}
+          onBook={(id) => {
+            setSelectedRoomId(id);
+            setTimeout(() => {
+              document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
+            }, 50);
+          }}
+        />
+      </div>
+    </SiteDataContext.Provider>
   );
 }

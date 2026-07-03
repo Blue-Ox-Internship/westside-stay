@@ -18,3 +18,26 @@ CREATE TABLE IF NOT EXISTS reviews (
   text TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS rooms (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  long_description TEXT NOT NULL,
+  max_guests INTEGER NOT NULL,
+  bed TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  price NUMERIC NOT NULL,
+  images JSONB NOT NULL DEFAULT '[]',
+  video TEXT,
+  amenities JSONB NOT NULL DEFAULT '[]',
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+-- Key/value store for editable site copy (hero slogan, contact info, social
+-- links, "why choose us" cards, proximity stats, etc). Value is JSONB so a
+-- key can hold a string, a number, or a structured array/object.
+CREATE TABLE IF NOT EXISTS site_content (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL
+);

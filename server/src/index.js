@@ -5,6 +5,8 @@ import "dotenv/config";
 import bookingsRouter from "./routes/bookings.js";
 import reviewsRouter from "./routes/reviews.js";
 import cloudinaryRouter from "./routes/cloudinary.js";
+import roomsRouter from "./routes/rooms.js";
+import contentRouter from "./routes/content.js";
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/bookings", bookingsRouter);
 app.use("/api/reviews", reviewsRouter);
 app.use("/api/cloudinary", cloudinaryRouter);
+app.use("/api/rooms", roomsRouter);
+app.use("/api/content", contentRouter);
 
 const port = process.env.PORT ?? 4000;
 app.listen(port, () => console.log(`Server listening on port ${port}`));

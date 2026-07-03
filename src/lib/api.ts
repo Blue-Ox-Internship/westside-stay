@@ -1,4 +1,4 @@
-import type { Review } from "@/components/site/data";
+import type { Review, Room } from "@/components/site/data";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
@@ -71,6 +71,142 @@ export async function updateBookingStatus(
     throw new Error(body?.error ?? "Failed to update booking.");
   }
   return res.json();
+}
+
+type RoomRow = {
+  id: string;
+  name: string;
+  description: string;
+  long_description: string;
+  max_guests: number;
+  bed: string;
+  size: number;
+  price: string;
+  images: string[];
+  video: string | null;
+  amenities: string[];
+  sort_order: number;
+};
+
+function toRoom(row: RoomRow): Room {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    longDescription: row.long_description,
+    maxGuests: row.max_guests,
+    bed: row.bed,
+    size: row.size,
+    price: parseFloat(row.price),
+    images: row.images,
+    video: row.video ?? undefined,
+    amenities: row.amenities,
+  };
+}
+
+export async function fetchRooms(): Promise<Room[]> {
+  const res = await fetch(`${API_BASE_URL}/api/rooms`);
+  if (!res.ok) throw new Error("Failed to load rooms.");
+  const rows: RoomRow[] = await res.json();
+  return rows.map(toRoom);
+}
+
+export async function updateRoom(id: string, room: Room, adminPassword: string): Promise<Room> {
+  const res = await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
+    body: JSON.stringify({
+      name: room.name,
+      description: room.description,
+      longDescription: room.longDescription,
+      maxGuests: room.maxGuests,
+      bed: room.bed,
+      size: room.size,
+      price: room.price,
+      images: room.images,
+      video: room.video ?? null,
+      amenities: room.amenities,
+    }),
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Failed to update room.");
+  }
+  return toRoom(await res.json());
+}
+
+export type SiteContent = {
+  hero_slogan: string;
+  contact_email: string;
+  contact_phone: string;
+  whatsapp_number: string;
+  instagram_url: string;
+  tiktok_url: string;
+  address_line1: string;
+  address_city: string;
+  proximity_stats: { time: string; label: string }[];
+  why_choose_us: { title: string; desc: string }[];
+};
+
+export async function fetchContent(): Promise<Partial<SiteContent>> {
+  const res = await fetch(`${API_BASE_URL}/api/content`);
+  if (!res.ok) throw new Error("Failed to load site content.");
+  return res.json();
+}
+
+export async function updateContent(
+  content: Partial<SiteContent>,
+  adminPassword: string
+): Promise<Partial<SiteContent>> {
+  const res = await fetch(`${API_BASE_URL}/api/content`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
+    body: JSON.stringify(content),
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Failed to update site content.");
+  }
+  return res.json();
+}
+
+export async function getCloudinarySignature(adminPassword: string) {
+  const res = await fetch(`${API_BASE_URL}/api/cloudinary/signature`, {
+    headers: { "x-admin-password": adminPassword },
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) throw new Error("Failed to get upload signature.");
+  return res.json() as Promise<{
+    timestamp: number;
+    signature: string;
+    apiKey: string;
+    cloudName: string;
+    folder: string;
+  }>;
+}
+
+export async function uploadToCloudinary(
+  file: File,
+  adminPassword: string,
+  resourceType: "image" | "video"
+): Promise<string> {
+  const { timestamp, signature, apiKey, cloudName, folder } = await getCloudinarySignature(adminPassword);
+  const form = new FormData();
+  form.append("file", file);
+  form.append("api_key", apiKey);
+  form.append("timestamp", String(timestamp));
+  form.append("signature", signature);
+  form.append("folder", folder);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw new Error("Upload to Cloudinary failed.");
+  const data = await res.json();
+  return data.secure_url as string;
 }
 
 type ReviewRow = {
