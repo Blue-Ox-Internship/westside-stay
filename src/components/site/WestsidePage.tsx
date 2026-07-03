@@ -875,7 +875,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                 />
               </div>
               <div className="sm:col-span-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">Phone (must be on WhatsApp)</Label>
                 <Input
                   id="phone"
                   type="tel"
