@@ -332,7 +332,6 @@ function RoomModal({
           </DialogHeader>
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-foreground/80">
             <span>👥 Up to {room.maxGuests} guests</span>
-            <span>🛏 {room.bed}</span>
             <span className="font-semibold text-accent">${room.price} / night</span>
           </div>
           <div className="mt-6">
