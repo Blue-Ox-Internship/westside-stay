@@ -2,6 +2,14 @@ import type { Review, Room } from "@/components/site/data";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
+// Room videos are uploaded straight from phones, often as HEVC-encoded .mov
+// files that many browsers (esp. Chrome on Windows) can't decode cleanly.
+// Ask Cloudinary to transcode to a browser-appropriate format at delivery
+// time instead of serving the raw upload.
+export function optimizedVideoUrl(url: string): string {
+  return url.replace("/video/upload/", "/video/upload/q_auto,f_auto/");
+}
+
 export type BookingPayload = {
   name: string;
   phone: string;

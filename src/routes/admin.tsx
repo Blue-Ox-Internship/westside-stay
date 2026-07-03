@@ -24,6 +24,7 @@ import {
   fetchContent,
   updateContent,
   uploadToCloudinary,
+  optimizedVideoUrl,
   type Booking,
   type SiteContent,
 } from "@/lib/api";
@@ -443,7 +444,7 @@ function RoomsTab({ password }: { password: string }) {
             <div className="mt-2 flex flex-wrap gap-3">
               {room.videos.map((url, i) => (
                 <div key={url} className="relative">
-                  <video src={url} className="h-20 w-28 rounded-lg object-cover" muted />
+                  <video src={optimizedVideoUrl(url)} className="h-20 w-28 rounded-lg object-cover" muted />
                   <button
                     type="button"
                     onClick={() =>

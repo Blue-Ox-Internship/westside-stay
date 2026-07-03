@@ -41,6 +41,7 @@ import {
   fetchContent,
   fetchReviews,
   fetchRooms,
+  optimizedVideoUrl,
   type SiteContent,
 } from "@/lib/api";
 
@@ -223,7 +224,7 @@ function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
       <div className="relative aspect-[4/3] overflow-hidden">
         {room.videos[0] ? (
           <video
-            src={room.videos[0]}
+            src={optimizedVideoUrl(room.videos[0])}
             autoPlay
             muted
             loop
@@ -287,7 +288,7 @@ function RoomModal({
           {current?.type === "video" ? (
             <video
               key={current.url}
-              src={current.url}
+              src={optimizedVideoUrl(current.url)}
               autoPlay
               muted
               loop
