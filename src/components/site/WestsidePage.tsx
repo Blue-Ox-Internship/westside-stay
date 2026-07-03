@@ -53,6 +53,7 @@ import {
   optimizedVideoUrl,
   type SiteContent,
 } from "@/lib/api";
+import { useInView } from "@/hooks/use-in-view";
 
 const DEFAULT_CONTENT: SiteContent = {
   hero_slogan: "Where comfort meets home!",
@@ -356,18 +357,30 @@ function SectionHeading({ eyebrow, title, kicker }: { eyebrow?: string; title: s
 /* ---------------- ROOMS ---------------- */
 function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
   const { formatPrice } = useCurrency();
+  const { ref, inView } = useInView<HTMLDivElement>();
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative aspect-[4/3] overflow-hidden">
+      <div ref={ref} className="relative aspect-[4/3] overflow-hidden">
         {room.videos[0] ? (
-          <video
-            src={optimizedVideoUrl(room.videos[0])}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
+          inView ? (
+            <video
+              src={optimizedVideoUrl(room.videos[0], 800)}
+              poster={room.images[0]}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <img
+              src={room.images[0]}
+              alt={room.name}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          )
         ) : (
           <img
             src={room.images[0]}
@@ -426,11 +439,13 @@ function RoomModal({
           {current?.type === "video" ? (
             <video
               key={current.url}
-              src={optimizedVideoUrl(current.url)}
+              src={optimizedVideoUrl(current.url, 1400)}
+              poster={room.images[0]}
               autoPlay
               muted
               loop
               playsInline
+              preload="metadata"
               className="h-full w-full object-cover"
             />
           ) : (
@@ -527,6 +542,7 @@ function ExteriorSection() {
   const { content } = useSiteData();
   const { description, images, videos } = content.exterior;
   const [idx, setIdx] = useState(0);
+  const { ref, inView } = useInView<HTMLDivElement>();
   const media = [
     ...videos.map((url) => ({ type: "video" as const, url })),
     ...images.map((url) => ({ type: "image" as const, url })),
@@ -543,17 +559,30 @@ function ExteriorSection() {
           kicker={description || undefined}
         />
         {total > 0 && (
-          <div className="relative mx-auto aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl bg-muted shadow-sm">
+          <div
+            ref={ref}
+            className="relative mx-auto aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl bg-muted shadow-sm"
+          >
             {current.type === "video" ? (
-              <video
-                key={current.url}
-                src={optimizedVideoUrl(current.url)}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="h-full w-full object-cover object-bottom"
-              />
+              inView ? (
+                <video
+                  key={current.url}
+                  src={optimizedVideoUrl(current.url, 1600)}
+                  poster={images[0]}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover object-bottom"
+                />
+              ) : (
+                <img
+                  src={images[0]}
+                  alt="Exterior of The Westside Airbnb"
+                  className="h-full w-full object-cover object-bottom"
+                />
+              )
             ) : (
               <img
                 src={current.url}
