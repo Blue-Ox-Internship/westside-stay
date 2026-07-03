@@ -60,6 +60,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { title: "", desc: "" },
   ],
   exterior: { description: "", images: [], videos: [] },
+  payment_methods: [],
 };
 
 function statusVariant(status: Booking["status"]): "default" | "secondary" | "destructive" {
@@ -519,6 +520,27 @@ function ContentTab({ password }: { password: string }) {
     setContentState((prev) => (prev ? { ...prev, exterior: { ...prev.exterior, ...patch } } : prev));
   };
 
+  const addPaymentMethod = () => {
+    setContentState((prev) =>
+      prev ? { ...prev, payment_methods: [...prev.payment_methods, { name: "", details: "" }] } : prev
+    );
+  };
+
+  const updatePaymentMethod = (i: number, patch: Partial<{ name: string; details: string }>) => {
+    setContentState((prev) => {
+      if (!prev) return prev;
+      const methods = [...prev.payment_methods];
+      methods[i] = { ...methods[i], ...patch };
+      return { ...prev, payment_methods: methods };
+    });
+  };
+
+  const removePaymentMethod = (i: number) => {
+    setContentState((prev) =>
+      prev ? { ...prev, payment_methods: prev.payment_methods.filter((_, idx) => idx !== i) } : prev
+    );
+  };
+
   const handleExteriorImageUpload = async (file: File) => {
     setUploadingExterior("image");
     try {
@@ -719,6 +741,41 @@ function ContentTab({ password }: { password: string }) {
               />
             </label>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="font-display text-xl font-semibold text-primary">Payment methods</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Shown to guests via a "Payment Methods" button when they book.
+        </p>
+        <div className="mt-4 space-y-4">
+          {content.payment_methods.map((m, i) => (
+            <div key={i} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto] sm:items-start">
+              <Input
+                value={m.name}
+                onChange={(e) => updatePaymentMethod(i, { name: e.target.value })}
+                placeholder="e.g. MTN Mobile Money"
+              />
+              <Textarea
+                value={m.details}
+                onChange={(e) => updatePaymentMethod(i, { details: e.target.value })}
+                placeholder="Payment details / instructions"
+                className="min-h-[70px]"
+              />
+              <button
+                type="button"
+                onClick={() => removePaymentMethod(i)}
+                aria-label="Remove payment method"
+                className="grid h-9 w-9 place-items-center rounded-full bg-destructive text-destructive-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" onClick={addPaymentMethod}>
+            + Add payment method
+          </Button>
         </div>
       </div>
 

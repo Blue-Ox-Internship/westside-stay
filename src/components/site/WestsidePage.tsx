@@ -75,6 +75,7 @@ const DEFAULT_CONTENT: SiteContent = {
     },
   ],
   exterior: { description: "", images: [], videos: [] },
+  payment_methods: [],
 };
 
 type SiteData = { rooms: Room[]; content: SiteContent };
@@ -582,6 +583,35 @@ function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): bool
   return aStart < bEnd && aEnd > bStart;
 }
 
+function PaymentMethodsDialog({
+  open,
+  onOpenChange,
+  methods,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  methods: { name: string; details: string }[];
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl text-primary">Payment Methods</DialogTitle>
+          <DialogDescription>Use any of the options below to pay for your stay.</DialogDescription>
+        </DialogHeader>
+        <div className="mt-2 space-y-4">
+          {methods.map((m, i) => (
+            <div key={i} className="rounded-xl border border-border bg-secondary/30 p-4">
+              <h4 className="font-display text-base font-semibold text-primary">{m.name}</h4>
+              <p className="mt-1 whitespace-pre-line text-sm text-foreground/80">{m.details}</p>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function BookingSection({ initialRoom }: { initialRoom: string }) {
   const [form, setForm] = useState({
     name: "",
@@ -594,8 +624,9 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
   });
   useEffect(() => setForm((f) => ({ ...f, roomId: initialRoom })), [initialRoom]);
 
-  const { rooms } = useSiteData();
+  const { rooms, content } = useSiteData();
   const room = rooms.find((r) => r.id === form.roomId) ?? rooms[0];
+  const [showPayment, setShowPayment] = useState(false);
 
   const [bookedRanges, setBookedRanges] = useState<{ from: Date; to: Date }[]>([]);
   useEffect(() => {
@@ -642,7 +673,10 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
     try {
       await createBooking(form);
       toast.success("🎉 Booking request sent!", {
-        description: "We'll confirm within 24 hours.",
+        description:
+          content.payment_methods.length > 0
+            ? "We'll confirm within 24 hours. Tap \"Payment Methods\" to complete your payment."
+            : "We'll confirm within 24 hours.",
       });
       setForm((f) => ({ ...f, checkIn: "", checkOut: "", requests: "" }));
       const ranges = await fetchAvailability(form.roomId).catch(() => null);
@@ -778,6 +812,16 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                 <span className="font-semibold text-primary">Total</span>
                 <span className="font-display text-2xl font-bold text-accent">${subtotal.toFixed(2)}</span>
               </div>
+              {content.payment_methods.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPayment(true)}
+                  className="mt-4 w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                >
+                  Payment Methods
+                </Button>
+              )}
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h3 className="px-2 pb-2 font-display text-lg font-semibold text-primary">Availability</h3>
@@ -793,6 +837,7 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
           </div>
         </div>
       </div>
+      <PaymentMethodsDialog open={showPayment} onOpenChange={setShowPayment} methods={content.payment_methods} />
     </section>
   );
 }

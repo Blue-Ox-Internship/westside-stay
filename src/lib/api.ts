@@ -157,6 +157,7 @@ export type SiteContent = {
   proximity_stats: { time: string; label: string }[];
   why_choose_us: { title: string; desc: string }[];
   exterior: { description: string; images: string[]; videos: string[] };
+  payment_methods: { name: string; details: string }[];
 };
 
 export async function fetchContent(): Promise<Partial<SiteContent>> {
