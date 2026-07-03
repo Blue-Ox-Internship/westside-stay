@@ -25,6 +25,7 @@ import {
   Sparkles,
   Home as HomeIcon,
   Heart,
+  Croissant,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -594,6 +595,7 @@ const AMENITIES = [
   { icon: WashingMachine, label: "Washing Machine" },
   { icon: Trees, label: "Mini-garden" },
   { icon: KeyRound, label: "24/7 Self Check-in" },
+  { icon: Croissant, label: "Breakfast", note: "Available at an extra cost" },
 ];
 
 function AmenitiesSection() {
@@ -606,7 +608,7 @@ function AmenitiesSection() {
           kicker="Everything you will need for a modern, comfortable, relaxed, effortless and memorable stay"
         />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {AMENITIES.map(({ icon: Icon, label }) => (
+          {AMENITIES.map(({ icon: Icon, label, note }) => (
             <div
               key={label}
               className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-accent hover:shadow-md"
@@ -615,6 +617,7 @@ function AmenitiesSection() {
                 <Icon className="h-5 w-5" />
               </span>
               <span className="text-sm font-medium text-foreground">{label}</span>
+              {note && <span className="text-xs text-muted-foreground">{note}</span>}
             </div>
           ))}
         </div>
