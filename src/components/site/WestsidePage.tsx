@@ -547,10 +547,14 @@ function ExteriorSection() {
                 muted
                 loop
                 playsInline
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-bottom"
               />
             ) : (
-              <img src={current.url} alt="Exterior of The Westside Airbnb" className="h-full w-full object-cover" />
+              <img
+                src={current.url}
+                alt="Exterior of The Westside Airbnb"
+                className="h-full w-full object-cover object-bottom"
+              />
             )}
             {total > 1 && (
               <>
