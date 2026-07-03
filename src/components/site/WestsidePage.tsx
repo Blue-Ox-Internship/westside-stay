@@ -73,6 +73,7 @@ const DEFAULT_CONTENT: SiteContent = {
       desc: "We're always a message away. From local recommendations to last-minute requests, your host has you covered, 24/7.",
     },
   ],
+  exterior: { description: "", images: [], videos: [] },
 };
 
 type SiteData = { rooms: Room[]; content: SiteContent };
@@ -84,6 +85,7 @@ function useSiteData() {
 /* ---------------- NAVBAR ---------------- */
 const NAV_LINKS = [
   { href: "#rooms", label: "Rooms" },
+  { href: "#exterior", label: "Exterior" },
   { href: "#amenities", label: "Amenities" },
   { href: "#offer", label: "What We Offer" },
   { href: "#location", label: "Location" },
@@ -379,6 +381,74 @@ function RoomsSection({
             <RoomCard key={r.id} room={r} onView={onViewRoom} />
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- EXTERIOR ---------------- */
+function ExteriorSection() {
+  const { content } = useSiteData();
+  const { description, images, videos } = content.exterior;
+  const [idx, setIdx] = useState(0);
+  const media = [
+    ...videos.map((url) => ({ type: "video" as const, url })),
+    ...images.map((url) => ({ type: "image" as const, url })),
+  ];
+  const total = media.length;
+  const current = media[idx];
+
+  return (
+    <section id="exterior" className="section-pad bg-background">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Take a look outside"
+          title="Exterior"
+          kicker={description || undefined}
+        />
+        {total > 0 && (
+          <div className="relative mx-auto aspect-[16/9] max-w-4xl overflow-hidden rounded-2xl bg-muted shadow-sm">
+            {current.type === "video" ? (
+              <video
+                key={current.url}
+                src={optimizedVideoUrl(current.url)}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img src={current.url} alt="Exterior of The Westside Airbnb" className="h-full w-full object-cover" />
+            )}
+            {total > 1 && (
+              <>
+                <button
+                  onClick={() => setIdx((i) => (i - 1 + total) % total)}
+                  className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
+                  aria-label="Previous"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setIdx((i) => (i + 1) % total)}
+                  className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
+                  aria-label="Next"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                  {media.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-1.5 bg-white/60"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1027,6 +1097,7 @@ export default function WestsidePage() {
         <main>
           <Hero />
           <RoomsSection onViewRoom={setActiveRoom} />
+          <ExteriorSection />
           <AmenitiesSection />
           <WhatWeOfferSection />
           <LocationSection />

@@ -155,6 +155,7 @@ export type SiteContent = {
   address_city: string;
   proximity_stats: { time: string; label: string }[];
   why_choose_us: { title: string; desc: string }[];
+  exterior: { description: string; images: string[]; videos: string[] };
 };
 
 export async function fetchContent(): Promise<Partial<SiteContent>> {
@@ -180,8 +181,9 @@ export async function updateContent(
   return res.json();
 }
 
-export async function getCloudinarySignature(adminPassword: string) {
-  const res = await fetch(`${API_BASE_URL}/api/cloudinary/signature`, {
+export async function getCloudinarySignature(adminPassword: string, folder?: "rooms" | "exterior") {
+  const query = folder ? `?folder=${folder}` : "";
+  const res = await fetch(`${API_BASE_URL}/api/cloudinary/signature${query}`, {
     headers: { "x-admin-password": adminPassword },
   });
   if (res.status === 401) throw new Error("Incorrect password.");
@@ -198,15 +200,19 @@ export async function getCloudinarySignature(adminPassword: string) {
 export async function uploadToCloudinary(
   file: File,
   adminPassword: string,
-  resourceType: "image" | "video"
+  resourceType: "image" | "video",
+  folder?: "rooms" | "exterior"
 ): Promise<string> {
-  const { timestamp, signature, apiKey, cloudName, folder } = await getCloudinarySignature(adminPassword);
+  const { timestamp, signature, apiKey, cloudName, folder: uploadFolder } = await getCloudinarySignature(
+    adminPassword,
+    folder
+  );
   const form = new FormData();
   form.append("file", file);
   form.append("api_key", apiKey);
   form.append("timestamp", String(timestamp));
   form.append("signature", signature);
-  form.append("folder", folder);
+  form.append("folder", uploadFolder);
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, {
     method: "POST",

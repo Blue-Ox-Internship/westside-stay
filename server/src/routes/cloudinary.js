@@ -7,9 +7,10 @@ const router = Router();
 // Issues a short-lived signature so the browser can upload a video
 // straight to Cloudinary without the API secret ever reaching the client.
 // Admin-only so random visitors can't mint upload credentials for our account.
-router.get("/signature", requireAdmin, (_req, res) => {
+router.get("/signature", requireAdmin, (req, res) => {
   const timestamp = Math.round(Date.now() / 1000);
-  const paramsToSign = { timestamp, folder: "westside-stay/rooms" };
+  const folder = req.query.folder === "exterior" ? "westside-stay/exterior" : "westside-stay/rooms";
+  const paramsToSign = { timestamp, folder };
 
   const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
 

@@ -58,6 +58,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { title: "", desc: "" },
     { title: "", desc: "" },
   ],
+  exterior: { description: "", images: [], videos: [] },
 };
 
 function statusVariant(status: Booking["status"]): "default" | "secondary" | "destructive" {
@@ -484,6 +485,7 @@ function RoomsTab({ password }: { password: string }) {
 function ContentTab({ password }: { password: string }) {
   const [content, setContentState] = useState<SiteContent | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingExterior, setUploadingExterior] = useState<"image" | "video" | null>(null);
 
   useEffect(() => {
     fetchContent()
@@ -510,6 +512,40 @@ function ContentTab({ password }: { password: string }) {
       stats[i] = { ...stats[i], ...patch };
       return { ...prev, proximity_stats: stats };
     });
+  };
+
+  const updateExterior = (patch: Partial<SiteContent["exterior"]>) => {
+    setContentState((prev) => (prev ? { ...prev, exterior: { ...prev.exterior, ...patch } } : prev));
+  };
+
+  const handleExteriorImageUpload = async (file: File) => {
+    setUploadingExterior("image");
+    try {
+      const url = await uploadToCloudinary(file, password, "image", "exterior");
+      setContentState((prev) =>
+        prev ? { ...prev, exterior: { ...prev.exterior, images: [...prev.exterior.images, url] } } : prev
+      );
+      toast.success("Image uploaded — click Save to publish.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploadingExterior(null);
+    }
+  };
+
+  const handleExteriorVideoUpload = async (file: File) => {
+    setUploadingExterior("video");
+    try {
+      const url = await uploadToCloudinary(file, password, "video", "exterior");
+      setContentState((prev) =>
+        prev ? { ...prev, exterior: { ...prev.exterior, videos: [...prev.exterior.videos, url] } } : prev
+      );
+      toast.success("Video uploaded — click Save to publish.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploadingExterior(null);
+    }
   };
 
   const handleSave = async () => {
@@ -595,6 +631,84 @@ function ContentTab({ password }: { password: string }) {
               onChange={(e) => update({ address_city: e.target.value })}
               className="mt-1.5"
             />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="font-display text-xl font-semibold text-primary">Exterior</h2>
+        <div className="mt-4">
+          <Label>Description</Label>
+          <Textarea
+            value={content.exterior.description}
+            onChange={(e) => updateExterior({ description: e.target.value })}
+            className="mt-1.5 min-h-[100px]"
+          />
+        </div>
+
+        <div className="mt-5">
+          <Label>Photos</Label>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {content.exterior.images.map((url, i) => (
+              <div key={url} className="relative">
+                <img src={url} className="h-20 w-28 rounded-lg object-cover" alt="" />
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateExterior({ images: content.exterior.images.filter((_, idx) => idx !== i) })
+                  }
+                  className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-destructive text-destructive-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <label className="grid h-20 w-28 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground hover:bg-secondary/50">
+              {uploadingExterior === "image" ? "Uploading..." : "+ Add photo"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleExteriorImageUpload(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <Label>Videos</Label>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {content.exterior.videos.map((url, i) => (
+              <div key={url} className="relative">
+                <video src={optimizedVideoUrl(url)} className="h-20 w-28 rounded-lg object-cover" muted />
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateExterior({ videos: content.exterior.videos.filter((_, idx) => idx !== i) })
+                  }
+                  className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-destructive text-destructive-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <label className="grid h-20 w-28 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground hover:bg-secondary/50">
+              {uploadingExterior === "video" ? "Uploading..." : "+ Add video"}
+              <input
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleExteriorVideoUpload(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
         </div>
       </div>
