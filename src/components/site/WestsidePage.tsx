@@ -787,6 +787,20 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
 
   const subtotal = nights * room.price;
   const [submitting, setSubmitting] = useState(false);
+  const [lastBooking, setLastBooking] = useState<{
+    name: string;
+    phone: string;
+    roomName: string;
+    checkIn: string;
+    checkOut: string;
+    guests: number;
+  } | null>(null);
+
+  const waLink = lastBooking
+    ? `https://wa.me/${content.whatsapp_number}?text=${encodeURIComponent(
+        `Hi! I just requested to book:\n\n🏠 Room: ${lastBooking.roomName}\n📅 Check-in: ${lastBooking.checkIn}\n📅 Check-out: ${lastBooking.checkOut}\n👥 Guests: ${lastBooking.guests}\n🙋 Name: ${lastBooking.name}\n📞 Phone: ${lastBooking.phone}\n\nPlease confirm my booking. Thank you!`
+      )}`
+    : "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -804,11 +818,16 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
     setSubmitting(true);
     try {
       await createBooking(form);
+      setLastBooking({
+        name: form.name,
+        phone: form.phone,
+        roomName: room.name,
+        checkIn: form.checkIn,
+        checkOut: form.checkOut,
+        guests: form.guests,
+      });
       toast.success("🎉 Booking request sent!", {
-        description:
-          content.payment_methods.length > 0
-            ? "We'll confirm within 24 hours. Tap \"Payment Methods\" to complete your payment."
-            : "We'll confirm within 24 hours.",
+        description: "Tap \"Message Us on WhatsApp\" below to confirm faster.",
       });
       setForm((f) => ({ ...f, checkIn: "", checkOut: "", requests: "" }));
       const ranges = await fetchAvailability(form.roomId).catch(() => null);
@@ -955,6 +974,20 @@ function BookingSection({ initialRoom }: { initialRoom: string }) {
                 </Button>
               )}
             </div>
+            {lastBooking && (
+              <div className="rounded-2xl border border-[#25D366]/40 bg-[#25D366]/5 p-6 shadow-sm">
+                <h3 className="font-display text-lg font-semibold text-primary">Confirm via WhatsApp</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Send us your booking details on WhatsApp so we can confirm it once you've paid.
+                </p>
+                <a href={waLink} target="_blank" rel="noreferrer">
+                  <Button className="mt-4 w-full bg-[#25D366] text-white hover:bg-[#1ebe5b]">
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Message Us on WhatsApp
+                  </Button>
+                </a>
+              </div>
+            )}
             <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h3 className="px-2 pb-2 font-display text-lg font-semibold text-primary">Availability</h3>
               <Calendar
