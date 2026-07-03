@@ -221,9 +221,9 @@ function RoomCard({ room, onView }: { room: Room; onView: (r: Room) => void }) {
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden">
-        {room.video ? (
+        {room.videos[0] ? (
           <video
-            src={room.video}
+            src={room.videos[0]}
             autoPlay
             muted
             loop
@@ -274,14 +274,20 @@ function RoomModal({
   const [idx, setIdx] = useState(0);
   useEffect(() => setIdx(0), [room?.id]);
   if (!room) return null;
-  const total = room.images.length;
+  const media = [
+    ...room.videos.map((url) => ({ type: "video" as const, url })),
+    ...room.images.map((url) => ({ type: "image" as const, url })),
+  ];
+  const total = media.length;
+  const current = media[idx];
   return (
     <Dialog open={!!room} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto p-0">
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-          {room.video ? (
+          {current?.type === "video" ? (
             <video
-              src={room.video}
+              key={current.url}
+              src={current.url}
               autoPlay
               muted
               loop
@@ -289,24 +295,26 @@ function RoomModal({
               className="h-full w-full object-cover"
             />
           ) : (
+            <img src={current?.url} alt={room.name} className="h-full w-full object-cover" />
+          )}
+          {total > 1 && (
             <>
-              <img src={room.images[idx]} alt={room.name} className="h-full w-full object-cover" />
               <button
                 onClick={() => setIdx((i) => (i - 1 + total) % total)}
                 className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
-                aria-label="Previous image"
+                aria-label="Previous"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setIdx((i) => (i + 1) % total)}
                 className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-foreground shadow-md hover:bg-background"
-                aria-label="Next image"
+                aria-label="Next"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
               <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-                {room.images.map((_, i) => (
+                {media.map((_, i) => (
                   <span
                     key={i}
                     className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-1.5 bg-white/60"}`}

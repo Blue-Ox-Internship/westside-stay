@@ -16,7 +16,7 @@ const rooms = [
       "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1600&q=80",
       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1600&q=80",
     ],
-    video: "https://res.cloudinary.com/fvcek1lo/video/upload/v1782980081/westside-stay/rooms/studio-room.mov",
+    videos: ["https://res.cloudinary.com/fvcek1lo/video/upload/v1782980081/westside-stay/rooms/studio-room.mov"],
     amenities: ["Queen bed", "Kitchenette", "Ensuite bathroom", "Smart TV", "Air conditioning", "Workspace"],
     sort_order: 0,
   },
@@ -36,7 +36,7 @@ const rooms = [
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80",
       "https://images.unsplash.com/photo-1567016526105-22da7c13161a?auto=format&fit=crop&w=1600&q=80",
     ],
-    video: "https://res.cloudinary.com/fvcek1lo/video/upload/v1782980113/westside-stay/rooms/one-bedroom.mov",
+    videos: ["https://res.cloudinary.com/fvcek1lo/video/upload/v1782980113/westside-stay/rooms/one-bedroom.mov"],
     amenities: ["King bed", "Separate living room", "Full kitchen", "Ensuite bathroom", "Smart TV", "Air conditioning"],
     sort_order: 1,
   },
@@ -74,7 +74,7 @@ const content = {
 
 for (const room of rooms) {
   await pool.query(
-    `INSERT INTO rooms (id, name, description, long_description, max_guests, bed, size, price, images, video, amenities, sort_order)
+    `INSERT INTO rooms (id, name, description, long_description, max_guests, bed, size, price, images, videos, amenities, sort_order)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      ON CONFLICT (id) DO NOTHING`,
     [
@@ -87,7 +87,7 @@ for (const room of rooms) {
       room.size,
       room.price,
       JSON.stringify(room.images),
-      room.video,
+      JSON.stringify(room.videos),
       JSON.stringify(room.amenities),
       room.sort_order,
     ]

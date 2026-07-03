@@ -25,7 +25,7 @@ router.post("/", requireAdmin, async (req, res) => {
     size,
     price,
     images,
-    video,
+    videos,
     amenities,
     sortOrder,
   } = req.body;
@@ -36,7 +36,7 @@ router.post("/", requireAdmin, async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO rooms (id, name, description, long_description, max_guests, bed, size, price, images, video, amenities, sort_order)
+      `INSERT INTO rooms (id, name, description, long_description, max_guests, bed, size, price, images, videos, amenities, sort_order)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
@@ -49,7 +49,7 @@ router.post("/", requireAdmin, async (req, res) => {
         size ?? 0,
         price,
         JSON.stringify(images ?? []),
-        video ?? null,
+        JSON.stringify(videos ?? []),
         JSON.stringify(amenities ?? []),
         sortOrder ?? 0,
       ]
@@ -71,7 +71,7 @@ router.put("/:id", requireAdmin, async (req, res) => {
     size,
     price,
     images,
-    video,
+    videos,
     amenities,
     sortOrder,
   } = req.body;
@@ -80,7 +80,7 @@ router.put("/:id", requireAdmin, async (req, res) => {
     const result = await pool.query(
       `UPDATE rooms SET
         name = $1, description = $2, long_description = $3, max_guests = $4, bed = $5,
-        size = $6, price = $7, images = $8, video = $9, amenities = $10, sort_order = $11
+        size = $6, price = $7, images = $8, videos = $9, amenities = $10, sort_order = $11
        WHERE id = $12
        RETURNING *`,
       [
@@ -92,7 +92,7 @@ router.put("/:id", requireAdmin, async (req, res) => {
         size,
         price,
         JSON.stringify(images ?? []),
-        video ?? null,
+        JSON.stringify(videos ?? []),
         JSON.stringify(amenities ?? []),
         sortOrder ?? 0,
         req.params.id,

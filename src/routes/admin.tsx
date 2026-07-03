@@ -311,7 +311,7 @@ function RoomsTab({ password }: { password: string }) {
     setUploadingId(room.id);
     try {
       const url = await uploadToCloudinary(file, password, "video");
-      updateField(room.id, { video: url });
+      updateField(room.id, { videos: [...room.videos, url] });
       toast.success("Video uploaded — click Save to publish.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed.");
@@ -439,13 +439,24 @@ function RoomsTab({ password }: { password: string }) {
           </div>
 
           <div className="mt-5">
-            <Label>Video</Label>
-            <div className="mt-2 flex items-center gap-3">
-              {room.video && (
-                <video src={room.video} className="h-20 w-28 rounded-lg object-cover" muted />
-              )}
-              <label className="cursor-pointer rounded-lg border border-dashed border-border px-4 py-2 text-xs text-muted-foreground hover:bg-secondary/50">
-                {uploadingId === room.id ? "Uploading..." : room.video ? "Replace video" : "+ Add video"}
+            <Label>Videos</Label>
+            <div className="mt-2 flex flex-wrap gap-3">
+              {room.videos.map((url, i) => (
+                <div key={url} className="relative">
+                  <video src={url} className="h-20 w-28 rounded-lg object-cover" muted />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateField(room.id, { videos: room.videos.filter((_, idx) => idx !== i) })
+                    }
+                    className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-destructive text-destructive-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <label className="grid h-20 w-28 cursor-pointer place-items-center rounded-lg border border-dashed border-border text-center text-xs text-muted-foreground hover:bg-secondary/50">
+                {uploadingId === room.id ? "Uploading..." : "+ Add video"}
                 <input
                   type="file"
                   accept="video/*"

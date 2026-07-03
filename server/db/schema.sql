@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   size INTEGER NOT NULL,
   price NUMERIC NOT NULL,
   images JSONB NOT NULL DEFAULT '[]',
-  video TEXT,
+  videos JSONB NOT NULL DEFAULT '[]',
   amenities JSONB NOT NULL DEFAULT '[]',
   sort_order INTEGER NOT NULL DEFAULT 0
 );

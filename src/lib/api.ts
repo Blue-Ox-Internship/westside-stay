@@ -83,7 +83,7 @@ type RoomRow = {
   size: number;
   price: string;
   images: string[];
-  video: string | null;
+  videos: string[];
   amenities: string[];
   sort_order: number;
 };
@@ -99,7 +99,7 @@ function toRoom(row: RoomRow): Room {
     size: row.size,
     price: parseFloat(row.price),
     images: row.images,
-    video: row.video ?? undefined,
+    videos: row.videos,
     amenities: row.amenities,
   };
 }
@@ -124,7 +124,7 @@ export async function updateRoom(id: string, room: Room, adminPassword: string):
       size: room.size,
       price: room.price,
       images: room.images,
-      video: room.video ?? null,
+      videos: room.videos,
       amenities: room.amenities,
     }),
   });
