@@ -274,3 +274,39 @@ export async function createReview(payload: { name: string; rating: number; text
   }
   return toReview(await res.json());
 }
+
+export type AdminReview = {
+  id: string;
+  name: string;
+  rating: number;
+  text: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+};
+
+export async function fetchAllReviews(adminPassword: string): Promise<AdminReview[]> {
+  const res = await fetch(`${API_BASE_URL}/api/reviews/admin`, {
+    headers: { "x-admin-password": adminPassword },
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) throw new Error("Failed to load reviews.");
+  return res.json();
+}
+
+export async function updateReviewStatus(
+  id: string,
+  status: AdminReview["status"],
+  adminPassword: string
+): Promise<AdminReview> {
+  const res = await fetch(`${API_BASE_URL}/api/reviews/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "x-admin-password": adminPassword },
+    body: JSON.stringify({ status }),
+  });
+  if (res.status === 401) throw new Error("Incorrect password.");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? "Failed to update review.");
+  }
+  return res.json();
+}

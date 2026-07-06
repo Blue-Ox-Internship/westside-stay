@@ -19,6 +19,8 @@ import {
 import {
   fetchAllBookings,
   updateBookingStatus,
+  fetchAllReviews,
+  updateReviewStatus,
   fetchRooms,
   updateRoom,
   fetchContent,
@@ -26,6 +28,7 @@ import {
   uploadToCloudinary,
   optimizedVideoUrl,
   type Booking,
+  type AdminReview,
   type SiteContent,
 } from "@/lib/api";
 import { ROOMS, type Room } from "@/components/site/data";
@@ -73,7 +76,7 @@ function roomName(roomId: string): string {
   return ROOMS.find((r) => r.id === roomId)?.name ?? roomId;
 }
 
-const TABS = ["Bookings", "Rooms", "Content"] as const;
+const TABS = ["Bookings", "Reviews", "Rooms", "Content"] as const;
 type Tab = (typeof TABS)[number];
 
 function AdminPage() {
@@ -167,6 +170,7 @@ function AdminPage() {
 
         <div className="mt-6">
           {tab === "Bookings" && <BookingsTab password={password} />}
+          {tab === "Reviews" && <ReviewsTab password={password} />}
           {tab === "Rooms" && <RoomsTab password={password} />}
           {tab === "Content" && <ContentTab password={password} />}
         </div>
@@ -355,6 +359,100 @@ function BookingsTab({ password }: { password: string }) {
               </TableRow>
             );
           })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function reviewStatusVariant(status: AdminReview["status"]): "default" | "secondary" | "destructive" {
+  if (status === "approved") return "default";
+  if (status === "rejected") return "destructive";
+  return "secondary";
+}
+
+function ReviewsTab({ password }: { password: string }) {
+  const [reviews, setReviews] = useState<AdminReview[] | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAllReviews(password)
+      .then(setReviews)
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Failed to load reviews."));
+  }, [password]);
+
+  const handleStatusChange = async (id: string, status: AdminReview["status"]) => {
+    setUpdatingId(id);
+    try {
+      const updated = await updateReviewStatus(id, status, password);
+      setReviews((prev) => (prev ? prev.map((r) => (r.id === id ? updated : r)) : prev));
+      toast.success(`Review ${status}.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update review.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  if (!reviews) return <p className="text-muted-foreground">Loading reviews...</p>;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Guest</TableHead>
+            <TableHead>Rating</TableHead>
+            <TableHead>Review</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {reviews.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                No reviews yet.
+              </TableCell>
+            </TableRow>
+          )}
+          {reviews.map((r) => (
+            <TableRow key={r.id}>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell className="whitespace-nowrap text-[var(--gold)]">
+                {"★".repeat(r.rating)}
+                {"☆".repeat(5 - r.rating)}
+              </TableCell>
+              <TableCell className="max-w-[320px] text-muted-foreground">{r.text}</TableCell>
+              <TableCell>
+                <Badge variant={reviewStatusVariant(r.status)} className="capitalize">
+                  {r.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                {r.status !== "approved" && (
+                  <Button
+                    size="sm"
+                    disabled={updatingId === r.id}
+                    onClick={() => handleStatusChange(r.id, "approved")}
+                    className="mr-2"
+                  >
+                    Approve
+                  </Button>
+                )}
+                {r.status !== "rejected" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={updatingId === r.id}
+                    onClick={() => handleStatusChange(r.id, "rejected")}
+                  >
+                    Reject
+                  </Button>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

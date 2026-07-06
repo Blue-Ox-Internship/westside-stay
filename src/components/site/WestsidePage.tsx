@@ -1137,12 +1137,13 @@ function ReviewsSection() {
 
     setSubmitting(true);
     try {
-      const newReview = await createReview({ name: name.trim(), rating, text: text.trim() });
-      setReviews((prev) => [newReview, ...prev]);
+      await createReview({ name: name.trim(), rating, text: text.trim() });
       setName("");
       setRating(0);
       setText("");
-      toast.success("Thanks for your review!");
+      toast.success("Thanks for your review!", {
+        description: "It'll appear on the site once we've reviewed it.",
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to submit review.");
     } finally {
