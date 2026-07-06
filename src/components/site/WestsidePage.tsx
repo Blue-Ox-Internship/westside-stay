@@ -1109,6 +1109,13 @@ function ReviewCard({ r }: { r: Review }) {
   );
 }
 
+const QUICK_REVIEWS = [
+  { label: "Fair", text: "My stay was fair." },
+  { label: "Good", text: "My stay was good." },
+  { label: "Excellent", text: "My stay was excellent." },
+];
+const REVIEW_MAX_LENGTH = 50;
+
 function ReviewsSection() {
   const [reviews, setReviews] = useState<Review[]>(SAMPLE_REVIEWS);
   const [name, setName] = useState("");
@@ -1134,6 +1141,7 @@ function ReviewsSection() {
     if (!name.trim()) return toast.error("Please enter your name.");
     if (rating < 1) return toast.error("Please select a star rating.");
     if (text.trim().length < 8) return toast.error("Please write at least a few words.");
+    if (text.trim().length > 50) return toast.error("Reviews are limited to 50 characters.");
 
     setSubmitting(true);
     try {
@@ -1209,13 +1217,33 @@ function ReviewsSection() {
             </div>
             <div>
               <Label htmlFor="rtext">Your review</Label>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                {QUICK_REVIEWS.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => setText(q.text)}
+                    className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                      text === q.text
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground/80 hover:bg-secondary"
+                    }`}
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
               <Textarea
                 id="rtext"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
-                className="mt-1.5 min-h-[110px]"
+                onChange={(e) => setText(e.target.value.slice(0, REVIEW_MAX_LENGTH))}
+                maxLength={REVIEW_MAX_LENGTH}
+                className="mt-2 min-h-[110px]"
                 placeholder="Share what made your stay special..."
               />
+              <p className="mt-1 text-right text-xs text-muted-foreground">
+                {text.length}/{REVIEW_MAX_LENGTH}
+              </p>
             </div>
             <Button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {submitting ? "Submitting..." : "Submit Review"}
