@@ -1114,7 +1114,17 @@ const QUICK_REVIEWS = [
   { label: "Good", text: "My stay was good." },
   { label: "Excellent", text: "My stay was excellent." },
 ];
-const REVIEW_MAX_LENGTH = 50;
+const REVIEW_MAX_WORDS = 50;
+
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  return trimmed === "" ? 0 : trimmed.split(/\s+/).length;
+}
+
+function truncateToWords(text: string, maxWords: number): string {
+  const words = text.split(/\s+/).filter(Boolean);
+  return words.length <= maxWords ? text : words.slice(0, maxWords).join(" ");
+}
 
 function ReviewsSection() {
   const [reviews, setReviews] = useState<Review[]>(SAMPLE_REVIEWS);
@@ -1141,7 +1151,7 @@ function ReviewsSection() {
     if (!name.trim()) return toast.error("Please enter your name.");
     if (rating < 1) return toast.error("Please select a star rating.");
     if (text.trim().length < 8) return toast.error("Please write at least a few words.");
-    if (text.trim().length > 50) return toast.error("Reviews are limited to 50 characters.");
+    if (countWords(text) > REVIEW_MAX_WORDS) return toast.error("Reviews are limited to 50 words.");
 
     setSubmitting(true);
     try {
@@ -1236,13 +1246,12 @@ function ReviewsSection() {
               <Textarea
                 id="rtext"
                 value={text}
-                onChange={(e) => setText(e.target.value.slice(0, REVIEW_MAX_LENGTH))}
-                maxLength={REVIEW_MAX_LENGTH}
+                onChange={(e) => setText(truncateToWords(e.target.value, REVIEW_MAX_WORDS))}
                 className="mt-2 min-h-[110px]"
                 placeholder="Share what made your stay special..."
               />
               <p className="mt-1 text-right text-xs text-muted-foreground">
-                {text.length}/{REVIEW_MAX_LENGTH}
+                {countWords(text)}/{REVIEW_MAX_WORDS} words
               </p>
             </div>
             <Button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90">

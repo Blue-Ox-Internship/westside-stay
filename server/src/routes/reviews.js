@@ -6,6 +6,7 @@ const router = Router();
 
 router.post("/", async (req, res) => {
   const { name, rating, text } = req.body;
+  const wordCount = text?.trim() ? text.trim().split(/\s+/).length : 0;
 
   if (
     !name?.trim() ||
@@ -14,7 +15,7 @@ router.post("/", async (req, res) => {
     rating > 5 ||
     !text ||
     text.trim().length < 8 ||
-    text.trim().length > 50
+    wordCount > 50
   ) {
     return res.status(400).json({ error: "Missing or invalid review fields." });
   }
