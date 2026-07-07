@@ -1357,7 +1357,7 @@ function Footer() {
       </div>
       <div className="border-t border-white/10">
         <p className="mx-auto max-w-7xl px-4 py-5 text-center text-xs text-primary-foreground/70 sm:px-6 lg:px-8">
-          © 2025 The Westside Airbnb. All rights reserved.
+          © {new Date().getFullYear()} The Westside Airbnb. All rights reserved.
         </p>
       </div>
     </footer>
