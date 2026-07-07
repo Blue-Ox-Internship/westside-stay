@@ -52,7 +52,7 @@
 | **Build Tool** | [Vite 8](https://vitejs.dev) |
 | **Type Safety** | TypeScript 5 |
 | **Linting** | ESLint + Prettier |
-| **Deployment** | [Lovable](https://lovable.dev) (Cloudflare via Nitro) |
+| **Deployment** | Vercel (via Nitro) |
 
 ### Design System
 - **Fonts:** Playfair Display (headings) · Inter (body)
@@ -114,7 +114,7 @@ the-westside-stay/
 │   ├── start.ts                   # TanStack Start entry point
 │   ├── router.tsx                 # Router creation
 │   └── styles.css                 # Global CSS, design tokens, Tailwind config
-├── vite.config.ts                 # Vite + Lovable config
+├── vite.config.ts                 # Vite config
 ├── components.json                # shadcn/ui component registry config
 ├── tsconfig.json
 └── package.json
@@ -138,12 +138,6 @@ The index route includes full meta tags:
 > - 10 min to City Centre
 > - 5 min to Supermarket
 > - 15 min to Airport
-
----
-
-## 🤝 Contributing
-
-This project is connected to [Lovable](https://lovable.dev). Please **do not** force-push, rebase, amend, or squash commits that have already been pushed — doing so rewrites history on Lovable's side and may result in lost project history.
 
 ---
 
